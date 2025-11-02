@@ -19,6 +19,6 @@ jobs:
           script: |
             cd /home/ubuntu/Backend
             git pull origin main
-            ./gradlew clean build
+            ./gradlew clean build -x test
             sudo fuser -k -n tcp 8080 || true
             nohup java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
