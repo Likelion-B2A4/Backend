@@ -16,16 +16,6 @@ spring:
       hibernate:
         format_sql: true
 
-  cloud:
-    aws:
-      region:
-        static: ap-northeast-2
-      credentials:
-        access-key: YOUR_ACCESS_KEY
-        secret-key: YOUR_SECRET_KEY
-      s3:
-        bucket: my-hospital-service-bucket
-
 
 jwt:
   secret: your-super-secret-key-for-signing-jwt-tokens
