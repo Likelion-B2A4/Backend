@@ -58,4 +58,24 @@ public class Hospital extends BaseEntity {
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<HospitalOperatingHours> operatingHours = new ArrayList<>();
+
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updateAddress(String address) {
+        this.address = address;
+    }
+
+    public void updateContact(String contact) {
+        this.contact = contact;
+    }
+
+    public void updateSpecialties(String specialties) {
+        this.specialties = specialties;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

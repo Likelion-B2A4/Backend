@@ -52,4 +52,9 @@ public class Doctor extends BaseEntity {
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ChatRoom> chatRooms = new ArrayList<>();
+
+    public void updateQrCode(String qrCode, LocalDateTime generatedAt) {
+        this.qrCode = qrCode;
+        this.qrGeneratedAt = generatedAt;
+    }
 }

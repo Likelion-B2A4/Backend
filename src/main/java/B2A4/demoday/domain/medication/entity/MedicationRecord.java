@@ -49,4 +49,10 @@ public class MedicationRecord extends BaseEntity {
     @OneToMany(mappedBy = "medicationRecord", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MedicationSchedule> schedules = new ArrayList<>();
+
+    public void updateName(String name) { this.name = name; }
+    public void updateStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public void updateEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public void updateAlarmEnabled(Boolean alarmEnabled) { this.alarmEnabled = alarmEnabled; }
+    public void updateDaysOfWeek(String daysOfWeekJson) { this.daysOfWeek = daysOfWeekJson; }
 }
