@@ -27,10 +27,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/files/**","/api/hospitals/signup", "/api/hospitals/login", "/api/patients/signup", "/api/patients/login").permitAll()
+                        .requestMatchers("/", "chat-test.html", "/ws/**", "/files/**", "/api/hospitals/signup", "/api/hospitals/login", "/api/patients/signup", "/api/patients/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "chat_messages")
 @Builder
@@ -42,4 +44,11 @@ public class ChatMessage extends BaseEntity {
     @Column(name = "original_audio_url")
     private String originalAudioUrl;
 
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
+    }
+
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
+    }
 }

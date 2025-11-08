@@ -56,4 +56,13 @@ public class ChatRoom extends BaseEntity {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ChatMessage> messages = new ArrayList<>();
+
+    // 상태 및 시간 업데이트 메서드
+    public void updateStatus(String newStatus) {
+        this.status = newStatus.toLowerCase();
+    }
+
+    public void updateFinishedAt(LocalDateTime finishedAt) {
+        this.finishedAt = finishedAt;
+    }
 }

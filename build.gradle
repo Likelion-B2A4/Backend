@@ -41,6 +41,11 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:3.2.1')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 
+	// Spring WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	// Spring Messaging (STOMP 지원)
+	implementation 'org.springframework:spring-messaging'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
