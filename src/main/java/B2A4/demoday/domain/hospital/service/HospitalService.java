@@ -11,12 +11,15 @@ import B2A4.demoday.domain.hospital.entity.Hospital;
 import B2A4.demoday.domain.hospital.entity.HospitalOperatingHours;
 import B2A4.demoday.domain.hospital.repository.HospitalRepository;
 import B2A4.demoday.global.jwt.JwtTokenProvider;
+import B2A4.demoday.global.s3.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -27,12 +30,19 @@ public class HospitalService {
     private final HospitalRepository hospitalRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AwsS3Service awsS3Service;
 
     // 병원 회원가입
     // 동일 병원이 존재하는지 검사
-    public CommonResponse<HospitalSignupResponse> signup(HospitalSignupRequest request) {
+    public CommonResponse<HospitalSignupResponse> signup(HospitalSignupRequest request, MultipartFile image) {
         if (hospitalRepository.existsByLoginId(request.getLoginId())) {
             throw new IllegalArgumentException("이미 존재하는 병원 아이디입니다.");
+        }
+
+        // 이미지 업로드
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            imageUrl = awsS3Service.uploadFile(List.of(image)).get(0);
         }
 
         // 병원 생성 및 저장
@@ -43,7 +53,7 @@ public class HospitalService {
                 .address(request.getAddress())
                 .contact(request.getContact())
                 .specialties(JsonUtil.toJson(request.getSpecialties())) // JSON 변환
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl != null ? imageUrl : request.getImageUrl()) // 파일 or 기존 URL 중 하나 사용
                 .build();
 
         hospitalRepository.save(hospital);
@@ -86,7 +96,7 @@ public class HospitalService {
 
     // 병원 정보 수정
     @Transactional
-    public CommonResponse<HospitalSignupResponse> update(Long hospitalId, HospitalUpdateRequest request) {
+    public CommonResponse<HospitalSignupResponse> update(Long hospitalId, HospitalUpdateRequest request, MultipartFile image) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new NoSuchElementException("병원을 찾을 수 없습니다."));
 
@@ -102,6 +112,18 @@ public class HospitalService {
         if (request.getSpecialties() != null && !request.getSpecialties().isEmpty()) {
             String specialtiesJson = JsonUtil.toJson(request.getSpecialties());
             hospital.updateSpecialties(specialtiesJson);
+        }
+
+        // 이미지 업로드
+        if (image != null && !image.isEmpty()) {
+            // 기존 이미지가 있다면 S3에서 삭제
+            if (hospital.getImageUrl() != null && !hospital.getImageUrl().isBlank()) {
+                awsS3Service.deleteFile(hospital.getImageUrl());
+            }
+
+            // 새 이미지 업로드
+            String imageUrl = awsS3Service.uploadFile(List.of(image)).get(0);
+            hospital.updateImageUrl(imageUrl);
         }
 
         // 비밀번호 변경

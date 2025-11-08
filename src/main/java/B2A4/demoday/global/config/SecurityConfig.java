@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/hospitals/signup", "/api/hospitals/login", "/api/patients/signup", "/api/patients/login").permitAll()
+                        .requestMatchers("/files/**","/api/hospitals/signup", "/api/hospitals/login", "/api/patients/signup", "/api/patients/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

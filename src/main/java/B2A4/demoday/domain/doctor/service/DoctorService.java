@@ -3,14 +3,18 @@ package B2A4.demoday.domain.doctor.service;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.doctor.dto.request.DoctorRegisterRequest;
 import B2A4.demoday.domain.doctor.dto.request.DoctorSelectRequest;
+import B2A4.demoday.domain.doctor.dto.request.DoctorUpdateRequest;
 import B2A4.demoday.domain.doctor.dto.response.*;
 import B2A4.demoday.domain.doctor.entity.Doctor;
 import B2A4.demoday.domain.doctor.repository.DoctorRepository;
 import B2A4.demoday.domain.hospital.entity.Hospital;
 import B2A4.demoday.domain.hospital.repository.HospitalRepository;
+import B2A4.demoday.global.s3.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +30,7 @@ public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final HospitalRepository hospitalRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final AwsS3Service awsS3Service;
 
     // 공용 QR 코드 생성
     private String generateUniqueQrCode(Long hospitalId) {
@@ -37,7 +42,7 @@ public class DoctorService {
     }
 
     // 의사 등록
-    public CommonResponse<DoctorRegisterResponse> registerDoctor(Long hospitalId, DoctorRegisterRequest request) {
+    public CommonResponse<DoctorRegisterResponse> registerDoctor(Long hospitalId, DoctorRegisterRequest request, MultipartFile image) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new NoSuchElementException("병원을 찾을 수 없습니다."));
 
@@ -45,6 +50,12 @@ public class DoctorService {
         Optional<Doctor> existingDoctor = doctorRepository.findByNameAndHospital_Id(request.getName(), hospitalId);
         if (existingDoctor.isPresent()) {
             throw new IllegalArgumentException("이미 등록된 의사입니다.");
+        }
+
+        // 이미지 업로드
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            imageUrl = awsS3Service.uploadFile(List.of(image)).get(0);
         }
 
         // QR 코드 생성 (중복 방지)
@@ -56,7 +67,7 @@ public class DoctorService {
                 .name(request.getName())
                 .specialty(request.getSpecialty())
                 .password(passwordEncoder.encode(request.getPinCode())) // PIN 암호화
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl != null ? imageUrl : request.getImageUrl())
                 .qrCode(qrCode)
                 .qrGeneratedAt(LocalDateTime.now())
                 .build();
@@ -69,12 +80,53 @@ public class DoctorService {
         );
     }
 
+    @Transactional
+    public CommonResponse<DoctorRegisterResponse> updateDoctor(
+            Long doctorId,
+            DoctorUpdateRequest request,
+            MultipartFile image
+    ) {
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new NoSuchElementException("의사를 찾을 수 없습니다."));
+
+        // 이름 변경
+        if (request.getName() != null && !request.getName().isBlank()) {
+            doctor.updateName(request.getName());
+        }
+
+        // 전문분야 변경
+        if (request.getSpecialty() != null && !request.getSpecialty().isBlank()) {
+            doctor.updateSpecialty(request.getSpecialty());
+        }
+
+        // 새 비밀번호만 설정 (현재 비밀번호 확인 X)
+        if (request.getPinCode() != null && !request.getPinCode().isBlank()) {
+            doctor.updatePassword(passwordEncoder.encode(request.getPinCode()));
+        }
+
+        // 이미지 변경
+        if (image != null && !image.isEmpty()) {
+            if (doctor.getImageUrl() != null) {
+                awsS3Service.deleteFile(doctor.getImageUrl());
+            }
+
+            String imageUrl = awsS3Service.uploadFile(List.of(image)).get(0);
+            doctor.updateImageUrl(imageUrl);
+        }
+
+        doctorRepository.save(doctor);
+
+        return CommonResponse.success(
+                DoctorRegisterResponse.from(doctor),
+                "의사 정보가 수정되었습니다."
+        );
+    }
+
     // 병원 소속 의사 목록 조회
     public CommonResponse<List<DoctorListResponse>> getDoctorsByHospital(Long hospitalId) {
-        Hospital hospital = hospitalRepository.findById(hospitalId)
-                .orElseThrow(() -> new NoSuchElementException("병원을 찾을 수 없습니다."));
+        // repository를 통해 바로 조회
+        List<Doctor> doctors = doctorRepository.findAllByHospital_Id(hospitalId);
 
-        List<Doctor> doctors = hospital.getDoctors();
         List<DoctorListResponse> responseList = doctors.stream()
                 .map(DoctorListResponse::from)
                 .collect(Collectors.toList());

@@ -78,4 +78,8 @@ public class Hospital extends BaseEntity {
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
     }
+
+    public void updateImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 }

@@ -3,11 +3,13 @@ package B2A4.demoday.domain.doctor.controller;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.doctor.dto.request.DoctorRegisterRequest;
 import B2A4.demoday.domain.doctor.dto.request.DoctorSelectRequest;
+import B2A4.demoday.domain.doctor.dto.request.DoctorUpdateRequest;
 import B2A4.demoday.domain.doctor.dto.response.*;
 import B2A4.demoday.domain.doctor.service.DoctorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,13 +21,25 @@ public class DoctorController {
     private final DoctorService doctorService;
 
     // 의사 등록
-    @PostMapping("/hospitals/doctors")
+    @PostMapping(value = "/hospitals/doctors", consumes = {"multipart/form-data"})
     public CommonResponse<DoctorRegisterResponse> registerDoctor(
             @AuthenticationPrincipal Long hospitalId,
-            @RequestBody DoctorRegisterRequest request) {
-        return doctorService.registerDoctor(hospitalId, request);
+            @RequestPart("request") DoctorRegisterRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) {
+        return doctorService.registerDoctor(hospitalId, request, image);
     }
 
+    // 의사 정보 수정
+    @PatchMapping(value = "/doctors/{doctorId}", consumes = {"multipart/form-data"})
+    public CommonResponse<DoctorRegisterResponse> updateDoctor(
+            @PathVariable Long doctorId,
+            @RequestPart("request") DoctorUpdateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) {
+        return doctorService.updateDoctor(doctorId, request, image);
+    }
+    
     // 병원 소속 의사 목록 조회
     @GetMapping("/hospitals/doctors")
     public CommonResponse<List<DoctorListResponse>> getDoctorsByHospital(

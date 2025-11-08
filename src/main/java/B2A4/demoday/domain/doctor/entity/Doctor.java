@@ -57,4 +57,20 @@ public class Doctor extends BaseEntity {
         this.qrCode = qrCode;
         this.qrGeneratedAt = generatedAt;
     }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updateSpecialty(String specialty) {
+        this.specialty = specialty;
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
+    }
+
+    public void updateImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 }
