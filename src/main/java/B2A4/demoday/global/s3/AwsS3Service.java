@@ -22,10 +22,10 @@ public class AwsS3Service {
 
     private final S3Template s3Template;
 
-    @Value("${AWS_S3_BUCKET}")
+    @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
-    @Value("${AWS_REGION}")
+    @Value("${spring.cloud.aws.region.static}")
     private String region;
 
     // 파일 업로드
