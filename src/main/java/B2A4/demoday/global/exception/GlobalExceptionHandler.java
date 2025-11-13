@@ -1,6 +1,7 @@
 package B2A4.demoday.global.exception;
 
 import B2A4.demoday.domain.common.CommonResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ Hospital hospital = hospitalRepository.findById(id)
 
 */
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -58,6 +60,8 @@ public class GlobalExceptionHandler {
     // 기타 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonResponse<Void>> handleException(Exception e) {
+
+        log.error(e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(CommonResponse.fail("서버 오류가 발생했습니다."));
     }

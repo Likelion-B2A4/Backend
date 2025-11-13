@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
@@ -31,34 +32,17 @@ public class ChatController {
     private final PatientRepository patientRepository;
     private final ChatRoomRepository chatRoomRepository;
 
+    // 채팅방 생성
     @PostMapping("/rooms/scan-qr")
     @Transactional
     public CommonResponse<ChatRoomResponse> scanQr(
             @RequestBody ChatQrRequest request,
             HttpServletRequest httpRequest
     ) {
+
         Long patientId = (Long) httpRequest.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        return chatService.scanQr(request, patientId);
 
-        Doctor doctor = doctorRepository.findByQrCode(request.getQrCode())
-                .orElseThrow(() -> new NoSuchElementException("해당 QR코드의 의사를 찾을 수 없습니다."));
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new NoSuchElementException("환자를 찾을 수 없습니다."));
-
-        ChatRoom newRoom = ChatRoom.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .qrCode(request.getQrCode())
-                .status("waiting")
-                .startedAt(LocalDateTime.now())
-                .build();
-
-        ChatRoom savedRoom = chatRoomRepository.save(newRoom);
-
-        // 무한루프 방지: 엔티티 대신 DTO로 반환
-        return CommonResponse.success(
-                ChatRoomResponse.from(savedRoom),
-                "채팅방 생성 성공"
-        );
     }
 
     // 진료 종료
@@ -66,9 +50,17 @@ public class ChatController {
     public CommonResponse<?> closeChat(@PathVariable Long chatRoomId) {
         return chatService.closeChat(chatRoomId);
     }
-}
 
-@Getter
-class QrScanRequest {
-    private String qrCode;
+    // 음성 파일 업로드 (의사 전용)
+    @PostMapping("/{chatRoomId}/messages/voice")
+    public CommonResponse<?> uploadVoice(
+            @PathVariable Long chatRoomId,
+            @RequestParam("voice") MultipartFile voiceFile,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = (Long) httpRequest.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        String userType = (String) httpRequest.getAttribute(JwtAuthenticationFilter.ATTR_USER_TYPE);
+
+        return chatService.uploadVoiceMessage(chatRoomId, voiceFile, userId, userType);
+    }
 }
