@@ -28,9 +28,6 @@ import java.util.NoSuchElementException;
 public class ChatController {
 
     private final ChatService chatService;
-    private final DoctorRepository doctorRepository;
-    private final PatientRepository patientRepository;
-    private final ChatRoomRepository chatRoomRepository;
 
     // 채팅방 생성
     @PostMapping("/rooms/scan-qr")
