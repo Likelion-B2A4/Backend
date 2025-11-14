@@ -4,6 +4,7 @@ import B2A4.demoday.domain.chat.dto.request.ChatQrRequest;
 import B2A4.demoday.domain.chat.dto.response.ChatCloseNotification;
 import B2A4.demoday.domain.chat.dto.response.ChatMessageResponse;
 import B2A4.demoday.domain.chat.dto.response.ChatRoomResponse;
+import B2A4.demoday.domain.chat.dto.response.VoiceMessageResponse;
 import B2A4.demoday.domain.chat.entity.ChatMessage;
 import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.chat.repository.ChatMessageRepository;
@@ -202,6 +203,10 @@ public class ChatService {
 
         log.info("[음성 메시지 전송 완료] messageId={}, 변환된 텍스트={}", savedMessage.getId(), convertedText);
 
-        return CommonResponse.success(response, "음성 메시지가 전송되었습니다.");
+        // 7. HTTP 응답 DTO 새로 생성
+        VoiceMessageResponse httpRes = VoiceMessageResponse.from(savedMessage);
+        httpRes.setOriginalVoiceUrl(voiceFile.getOriginalFilename());   // TODO: 실제 파일 저장 후 URL로 변경 예정
+
+        return CommonResponse.success(httpRes, "음성 메시지가 전송되었습니다.");
     }
 }
