@@ -76,6 +76,11 @@ public class ChatController {
     }
 
     // 원본 미디어 조회
-
+    @GetMapping("/messages/{messageId}/url")
+    public CommonResponse<?> getOriginalVoice(
+            @PathVariable Long messageId
+    ) {
+        return chatService.getOriginalVoiceMessage(messageId);
+    }
 
 }

@@ -4,6 +4,7 @@ import B2A4.demoday.domain.chat.dto.request.ChatQrRequest;
 import B2A4.demoday.domain.chat.dto.response.ChatCloseNotification;
 import B2A4.demoday.domain.chat.dto.response.ChatMessageResponse;
 import B2A4.demoday.domain.chat.dto.response.ChatRoomResponse;
+import B2A4.demoday.domain.chat.dto.response.OriginalVoiceUrlResponse;
 import B2A4.demoday.domain.chat.entity.ChatMessage;
 import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.chat.repository.ChatMessageRepository;
@@ -24,10 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -228,5 +226,18 @@ public class ChatService {
                 .toList();
 
         return CommonResponse.success(responses, "채팅방 속 메시지 목록 조회 성공");
+    }
+
+    public CommonResponse<?> getOriginalVoiceMessage(Long messageId) {
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new NoSuchElementException("메시지를 찾을 수 없습니다."));
+
+        OriginalVoiceUrlResponse response = OriginalVoiceUrlResponse.builder()
+                .messageId(messageId)
+                .messageType(message.getMessageType())
+                .url(message.getOriginalAudioUrl())
+                .build();
+
+        return CommonResponse.success(response, "원본 파일 url 조회 성공");
     }
 }
