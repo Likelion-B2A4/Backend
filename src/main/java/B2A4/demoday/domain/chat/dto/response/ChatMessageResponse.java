@@ -9,6 +9,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class ChatMessageResponse {
+    private Long messageId;
     private Long roomId;
     private String senderType;
     private String messageType;
@@ -16,6 +17,7 @@ public class ChatMessageResponse {
 
     public static ChatMessageResponse from(ChatMessage msg) {
         return ChatMessageResponse.builder()
+                .messageId(msg.getId())
                 .roomId(msg.getChatRoom().getId())
                 .senderType(msg.getSenderType())
                 .messageType(msg.getMessageType())
