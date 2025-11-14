@@ -4,7 +4,6 @@ import B2A4.demoday.domain.chat.dto.request.ChatQrRequest;
 import B2A4.demoday.domain.chat.dto.response.ChatCloseNotification;
 import B2A4.demoday.domain.chat.dto.response.ChatMessageResponse;
 import B2A4.demoday.domain.chat.dto.response.ChatRoomResponse;
-import B2A4.demoday.domain.chat.dto.response.VoiceMessageResponse;
 import B2A4.demoday.domain.chat.entity.ChatMessage;
 import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.chat.repository.ChatMessageRepository;
@@ -25,8 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -203,10 +205,28 @@ public class ChatService {
 
         log.info("[음성 메시지 전송 완료] messageId={}, 변환된 텍스트={}", savedMessage.getId(), convertedText);
 
-        // 7. HTTP 응답 DTO 새로 생성
-        VoiceMessageResponse httpRes = VoiceMessageResponse.from(savedMessage);
-        httpRes.setOriginalVoiceUrl(voiceFile.getOriginalFilename());   // TODO: 실제 파일 저장 후 URL로 변경 예정
+        return CommonResponse.success(response, "음성 메시지가 전송되었습니다.");
+    }
 
-        return CommonResponse.success(httpRes, "음성 메시지가 전송되었습니다.");
+    public CommonResponse<List<ChatMessageResponse>> getMessagesByChatRoomId(Long chatRoomId, Long userId, String userType) {
+        // 1. 채팅방 찾기
+        ChatRoom room = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
+
+        // 2. userId 와 userType 이 속한 채팅방인지 검증
+        if ("hospital".equals(userType) && !room.getDoctor().getId().equals(userId)) {
+            throw new AccessDeniedException("해당 의사가 아닙니다.");
+        }
+        if ("patient".equals(userType) && !room.getPatient().getId().equals(userId)) {
+            throw new AccessDeniedException("해당 환자가 아닙니다.");
+        }
+
+        // 3. 해당 채팅방의 List<ChatMessage> -> List<ChatMessageResponse>
+        List<ChatMessageResponse> responses = room.getMessages().stream()
+                .sorted(Comparator.comparing(ChatMessage::getCreatedAt))
+                .map(ChatMessageResponse::from)
+                .toList();
+
+        return CommonResponse.success(responses, "채팅방 속 메시지 목록 조회 성공");
     }
 }

@@ -1,6 +1,7 @@
 package B2A4.demoday.domain.chat.controller;
 
 import B2A4.demoday.domain.chat.dto.request.ChatQrRequest;
+import B2A4.demoday.domain.chat.dto.response.ChatMessageResponse;
 import B2A4.demoday.domain.chat.dto.response.ChatRoomResponse;
 import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.chat.repository.ChatRoomRepository;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -60,4 +62,20 @@ public class ChatController {
 
         return chatService.uploadVoiceMessage(chatRoomId, voiceFile, userId, userType);
     }
+
+    // 채팅방 메시지 목록 조회
+    @GetMapping("/{chatRoomId}/messages")
+    public CommonResponse<List<ChatMessageResponse>> getMessages(
+            @PathVariable Long chatRoomId,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = (Long) httpRequest.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        String userType = (String) httpRequest.getAttribute(JwtAuthenticationFilter.ATTR_USER_TYPE);
+
+        return chatService.getMessagesByChatRoomId(chatRoomId, userId, userType);
+    }
+
+    // 원본 미디어 조회
+
+
 }
