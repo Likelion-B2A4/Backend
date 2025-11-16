@@ -25,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -143,28 +146,28 @@ public class ChatService {
     }
 
     // 메시지 저장 (WebSocket 통해 호출됨)
-    @Transactional
-    public ChatMessage saveMessage(ChatMessage message, Long userId) {
-        // userType 가져오기 (JWT에서)
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String userType = (auth != null && auth.getDetails() instanceof Map<?, ?> details)
-                ? (String) details.get("userType") : null;
-
-        ChatRoom room = chatRoomRepository.findById(message.getChatRoom().getId())
-                .orElseThrow(() -> new RuntimeException("채팅방 없음"));
-
-        // 권한 검증
-        if ("hospital".equals(userType) && !room.getDoctor().getId().equals(userId)) {
-            throw new AccessDeniedException("해당 의사가 아닙니다.");
-        }
-        if ("patient".equals(userType) && !room.getPatient().getId().equals(userId)) {
-            throw new AccessDeniedException("해당 환자가 아닙니다.");
-        }
-
-        message.setSenderId(userId);
-        message.setChatRoom(room);
-        return chatMessageRepository.save(message);
-    }
+//    @Transactional
+//    public ChatMessage saveMessage(ChatMessage message, Long userId) {
+//        // userType 가져오기 (JWT에서)
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        String userType = (auth != null && auth.getDetails() instanceof Map<?, ?> details)
+//                ? (String) details.get("userType") : null;
+//
+//        ChatRoom room = chatRoomRepository.findById(message.getChatRoom().getId())
+//                .orElseThrow(() -> new RuntimeException("채팅방 없음"));
+//
+//        // 권한 검증
+//        if ("hospital".equals(userType) && !room.getDoctor().getId().equals(userId)) {
+//            throw new AccessDeniedException("해당 의사가 아닙니다.");
+//        }
+//        if ("patient".equals(userType) && !room.getPatient().getId().equals(userId)) {
+//            throw new AccessDeniedException("해당 환자가 아닙니다.");
+//        }
+//
+//        message.setSenderId(userId);
+//        message.setChatRoom(room);
+//        return chatMessageRepository.save(message);
+//    }
 
     // 음성 파일 업로드 및 STT 변환 (의사 전용)
     @Transactional
@@ -185,10 +188,11 @@ public class ChatService {
 
         // 4. STT 변환
         log.info("[음성 메시지] 의사ID={}, 채팅방ID={}, 파일명={}", userId, chatRoomId, voiceFile.getOriginalFilename());
-        String convertedText = sttService.convertToText(voiceFile, chatRoomId);
+        String convertedText = sttService.convertToText(voiceFile);
 
-        // 이미 업로드되어있는 파일의 url 가져오기
-//        String voiceUrl = s3Service.uploadVoice()
+        // 4-1. STT 반환 성공하면 원본 파일 s3에 저장
+        List<String> urls = s3Service.uploadFile(List.of(voiceFile));
+        String voiceUrl = urls.get(0);
 
         // 5. 메시지 저장
         ChatMessage message = ChatMessage.builder()
@@ -197,7 +201,7 @@ public class ChatService {
                 .senderId(userId)
                 .messageType("voice")
                 .content(convertedText)
-                .originalAudioUrl(voiceFile.getOriginalFilename()) // TODO: 실제 파일 저장 후 URL로 변경 (지금은 그냥 파일명)
+                .originalAudioUrl(voiceUrl)
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
@@ -233,14 +237,18 @@ public class ChatService {
         return CommonResponse.success(responses, "채팅방 속 메시지 목록 조회 성공");
     }
 
-    public CommonResponse<?> getOriginalVoiceMessage(Long messageId) {
+    public CommonResponse<?> getOriginalVoiceMessage(Long messageId) throws MalformedURLException {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new NoSuchElementException("메시지를 찾을 수 없습니다."));
+
+        String voiceUrl = message.getOriginalAudioUrl();
+        String fileName = Paths.get(new URL(voiceUrl).getPath()).getFileName().toString();
 
         OriginalVoiceUrlResponse response = OriginalVoiceUrlResponse.builder()
                 .messageId(messageId)
                 .messageType(message.getMessageType())
-                .url(message.getOriginalAudioUrl())
+                .url(voiceUrl)
+                .fileName(fileName)
                 .build();
 
         return CommonResponse.success(response, "원본 파일 url 조회 성공");

@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.MalformedURLException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -79,7 +80,7 @@ public class ChatController {
     @GetMapping("/messages/{messageId}/url")
     public CommonResponse<?> getOriginalVoice(
             @PathVariable Long messageId
-    ) {
+    ) throws MalformedURLException {
         return chatService.getOriginalVoiceMessage(messageId);
     }
 

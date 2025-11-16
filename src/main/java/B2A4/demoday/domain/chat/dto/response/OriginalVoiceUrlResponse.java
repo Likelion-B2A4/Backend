@@ -9,6 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class OriginalVoiceUrlResponse {
     private Long messageId;
+    private String fileName;
     private String url;
     private String messageType;
 }

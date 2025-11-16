@@ -28,10 +28,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class STTService {
 
-    private final AwsS3Service s3Service;
     private final WebClient webClient;
 
-    public String convertToText(MultipartFile voiceFile, Long chatRoomId) {
+    public String convertToText(MultipartFile voiceFile) {
         if (voiceFile == null || voiceFile.isEmpty()) {
             throw new IllegalArgumentException("음성 파일이 비어있습니다.");
         }
@@ -39,16 +38,13 @@ public class STTService {
         String originalFilename = voiceFile.getOriginalFilename();
         long fileSize = voiceFile.getSize();
 
-        // s3 버킷에 원본 파일 업로드!!!
-        
+
         log.info("[STT 변환 시작] 파일명={}, 크기={}bytes", originalFilename, fileSize);
 
         try {
             String raw = transcribe(voiceFile);
             String polished = polish(raw);
-            
-            // 임시로 더미 텍스트 반환 (개발 단계)
-            //String dummyText = "[STT 변환된 텍스트] " + originalFilename + " 파일이 처리되었습니다.";
+
 
             log.info("[STT 변환 완료] 결과={}", raw);
             log.info("[AI 다듬기 완료] 결과={}", polished);
