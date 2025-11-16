@@ -14,6 +14,7 @@ import B2A4.demoday.domain.doctor.entity.Doctor;
 import B2A4.demoday.domain.patient.entity.Patient;
 import B2A4.demoday.domain.doctor.repository.DoctorRepository;
 import B2A4.demoday.domain.patient.repository.PatientRepository;
+import B2A4.demoday.global.s3.AwsS3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatService {
 
+    private final AwsS3Service s3Service;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
@@ -183,7 +185,10 @@ public class ChatService {
 
         // 4. STT 변환
         log.info("[음성 메시지] 의사ID={}, 채팅방ID={}, 파일명={}", userId, chatRoomId, voiceFile.getOriginalFilename());
-        String convertedText = sttService.convertToText(voiceFile);
+        String convertedText = sttService.convertToText(voiceFile, chatRoomId);
+
+        // 이미 업로드되어있는 파일의 url 가져오기
+//        String voiceUrl = s3Service.uploadVoice()
 
         // 5. 메시지 저장
         ChatMessage message = ChatMessage.builder()
