@@ -34,7 +34,7 @@ public class PatientRecordDetailResponse {
                 .hospitalName(hospital.getName())
                 .doctorId(doctor.getId())
                 .doctorName(doctor.getName())
-                .specialty(doctor.getSpecialty())  // ★ 필드명 오타 여부만 확인하면 OK
+                .specialty(doctor.getSpecialty())
                 .status(room.getStatus())
                 .startedAt(room.getStartedAt().toString())
                 .finishedAt(room.getFinishedAt().toString())
