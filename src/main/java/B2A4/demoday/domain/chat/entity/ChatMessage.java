@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "chat_messages")
 @Builder
@@ -29,17 +31,24 @@ public class ChatMessage extends BaseEntity {
     @Column(name = "sender_id", nullable = false)
     private Long senderId;
 
-    // text/sign_message/voice
+    // text/voice
     @Column(name = "message_type")
     private String messageType;
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "original_video_url")
-    private String originalVideoUrl;
+//    @Column(name = "original_video_url")
+//    private String originalVideoUrl;
 
     @Column(name = "original_audio_url")
     private String originalAudioUrl;
 
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
+    }
+
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
+    }
 }

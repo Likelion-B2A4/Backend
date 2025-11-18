@@ -20,7 +20,7 @@ public class JwtTokenProvider {
 
     public String createToken(Long userId, String userType) {
         Claims claims = Jwts.claims().setSubject(userId.toString());
-        claims.put("userType", userType); // patient or doctor
+        claims.put("userType", userType); // patient or hospital
 
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validityInMilliseconds);
