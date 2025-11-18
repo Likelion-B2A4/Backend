@@ -65,4 +65,8 @@ public class ChatRoom extends BaseEntity {
     public void updateFinishedAt(LocalDateTime finishedAt) {
         this.finishedAt = finishedAt;
     }
+
+    public void updateSymptomSummary(String newSymptomSummary) {this.symptomSummary = newSymptomSummary;}
+
+    public void updateDiagnosisSummary(String newDiagnosisSummary) {this.diagnosisSummary = newDiagnosisSummary;}
 }

@@ -19,10 +19,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.List;
 
-/**
- * STT 서비스 구현체
- * TODO: 실제 STT API (Google Cloud Speech-to-Text, OpenAI Whisper 등) 연동 필요
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

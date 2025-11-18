@@ -44,6 +44,7 @@ public class ChatService {
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final STTService sttService;
+    private final AISummaryService summaryService;
 
     // QR 스캔 시 채팅방 생성
     @Transactional
@@ -88,9 +89,12 @@ public class ChatService {
 
         // 양쪽에게 종료 알림 전송 (WebSocket 브로드캐스트)
         ChatCloseNotification closeNotification = ChatCloseNotification.create("진료가 종료되었습니다.");
-        
         messagingTemplate.convertAndSend("/sub/chats/" + chatRoomId + "/messages", closeNotification);
         log.info("[진료 종료] chatRoomId={}, 종료 알림 전송 완료", chatRoomId);
+
+        // AI 요약 비동기 생성 트리거
+        summaryService.generateSummaryAsync(chatRoomId);
+
 
         return CommonResponse.success(
                 ChatRoomResponse.from(room),

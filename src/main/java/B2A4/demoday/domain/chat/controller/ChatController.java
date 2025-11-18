@@ -3,6 +3,7 @@ package B2A4.demoday.domain.chat.controller;
 import B2A4.demoday.domain.chat.dto.request.ChatQrRequest;
 import B2A4.demoday.domain.chat.dto.response.ChatMessageResponse;
 import B2A4.demoday.domain.chat.dto.response.ChatRoomResponse;
+import B2A4.demoday.domain.chat.dto.response.ChatSummaryResponse;
 import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.chat.repository.ChatRoomRepository;
 import B2A4.demoday.domain.chat.service.ChatService;
@@ -31,6 +32,7 @@ import java.util.NoSuchElementException;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatRoomRepository chatRoomRepository;
 
     // 채팅방 생성
     @PostMapping("/rooms/scan-qr")
@@ -82,6 +84,27 @@ public class ChatController {
             @PathVariable Long messageId
     ) throws MalformedURLException {
         return chatService.getOriginalVoiceMessage(messageId);
+    }
+
+    @GetMapping("/{chatRoomId}/summary")
+    public CommonResponse<?> getSummary(
+            @PathVariable Long chatRoomId
+    ) {
+        ChatRoom room = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
+
+        if (room.getSymptomSummary() == null && room.getDiagnosisSummary() == null) {
+            // 아직 요약 안 됨
+            return CommonResponse.success(
+                    ChatSummaryResponse.pending(room),
+                    "AI 요약 대기 중"
+            );
+        }
+
+        return CommonResponse.success(
+                ChatSummaryResponse.ready(room),
+                "AI 요약 조회 성공"
+        );
     }
 
 }
