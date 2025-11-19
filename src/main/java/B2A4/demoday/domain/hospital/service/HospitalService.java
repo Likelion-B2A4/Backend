@@ -5,6 +5,7 @@ import B2A4.demoday.domain.common.JsonUtil;
 import B2A4.demoday.domain.hospital.dto.request.HospitalSignupRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalLoginRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalUpdateRequest;
+import B2A4.demoday.domain.hospital.dto.response.HospitalNearbyResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalSignupResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalLoginResponse;
 import B2A4.demoday.domain.hospital.entity.Hospital;
@@ -232,5 +233,17 @@ public class HospitalService {
 
             hospital.getOperatingHours().add(hours);
         });
+    }
+
+    //
+    private static final double DEFAULT_RADIUS = 3000.0;
+
+    public List<HospitalNearbyResponse> getNearbyHospitals(Double lat, Double lng, Double radius) {
+        return null;
+    }
+
+
+    public HospitalSignupResponse getHospitalDetail(Long hospitalId) {
+        return null;
     }
 }
