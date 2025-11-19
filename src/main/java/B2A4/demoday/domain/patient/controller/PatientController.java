@@ -5,7 +5,10 @@ import B2A4.demoday.domain.patient.dto.request.PatientUpdateRequest;
 import B2A4.demoday.domain.patient.dto.response.PatientLoginResponse;
 import B2A4.demoday.domain.patient.dto.request.PatientLoginRequest;
 import B2A4.demoday.domain.patient.dto.request.PatientSignupRequest;
+import B2A4.demoday.domain.patient.dto.response.PatientRecordDatesResponse;
+import B2A4.demoday.domain.patient.dto.response.PatientRecordDetailResponse;
 import B2A4.demoday.domain.patient.dto.response.PatientSignupResponse;
+import B2A4.demoday.domain.patient.service.PatientRecordService;
 import B2A4.demoday.domain.patient.service.PatientService;
 import B2A4.demoday.global.jwt.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class PatientController {
 
     private final PatientService patientService;
+    private final PatientRecordService patientRecordService;
 
     // 환자 회원가입
     @PostMapping("/signup")
@@ -48,5 +52,26 @@ public class PatientController {
         Long userId = (Long) request.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
         CommonResponse<PatientSignupResponse> response = patientService.update(userId, updateRequest);
         return ResponseEntity.ok(response);
+    }
+
+    // 특정 달 진료이력 날짜 목록 조회
+    @GetMapping("/records/dates")
+    public CommonResponse<PatientRecordDatesResponse> getRecordDates(
+            HttpServletRequest request,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        Long patientId = (Long) request.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        return patientRecordService.getRecordDates(patientId, year, month);
+    }
+
+    // 특정 날짜 진료이력 상세 조회
+    @GetMapping("/records")
+    public CommonResponse<PatientRecordDetailResponse> getRecordDetail(
+            HttpServletRequest request,
+            @RequestParam String date
+    ) {
+        Long patientId = (Long) request.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        return patientRecordService.getRecordDetail(patientId, date);
     }
 }
