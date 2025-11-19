@@ -1,13 +1,11 @@
 package B2A4.demoday.domain.patient.controller;
 
 import B2A4.demoday.domain.common.CommonResponse;
+import B2A4.demoday.domain.patient.dto.request.LocationPermissionUpdateRequest;
 import B2A4.demoday.domain.patient.dto.request.PatientUpdateRequest;
-import B2A4.demoday.domain.patient.dto.response.PatientLoginResponse;
+import B2A4.demoday.domain.patient.dto.response.*;
 import B2A4.demoday.domain.patient.dto.request.PatientLoginRequest;
 import B2A4.demoday.domain.patient.dto.request.PatientSignupRequest;
-import B2A4.demoday.domain.patient.dto.response.PatientRecordDatesResponse;
-import B2A4.demoday.domain.patient.dto.response.PatientRecordDetailResponse;
-import B2A4.demoday.domain.patient.dto.response.PatientSignupResponse;
 import B2A4.demoday.domain.patient.service.PatientRecordService;
 import B2A4.demoday.domain.patient.service.PatientService;
 import B2A4.demoday.global.jwt.JwtAuthenticationFilter;
@@ -73,5 +71,24 @@ public class PatientController {
     ) {
         Long patientId = (Long) request.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
         return patientRecordService.getRecordDetail(patientId, date);
+    }
+
+    // 위치 권한 조회
+    @GetMapping("/locations")
+    public CommonResponse<LocationPermissionResponse> getLocationPermission(
+            HttpServletRequest request
+    ) {
+        Long patientId = (Long) request.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        return patientService.getLocationPermission(patientId);
+    }
+
+    // 위치 권한 수정
+    @PostMapping("/locations")
+    public CommonResponse<Void> updateLocationPermission(
+            HttpServletRequest request,
+            @RequestBody LocationPermissionUpdateRequest req
+    ) {
+        Long patientId = (Long) request.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
+        return patientService.updateLocationPermission(patientId, req.isLocationPermission());
     }
 }

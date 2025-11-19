@@ -34,6 +34,9 @@ public class Patient extends BaseEntity {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "location_permission", nullable = false)
+    private boolean locationPermission = false;
+
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MedicationRecord> medicationRecords = new ArrayList<>();
@@ -52,5 +55,9 @@ public class Patient extends BaseEntity {
 
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    public void updateLocationPermission(boolean permission) {
+        this.locationPermission = permission;
     }
 }
