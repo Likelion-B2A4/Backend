@@ -3,6 +3,7 @@ package B2A4.demoday.domain.patient.service;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.patient.dto.request.PatientLoginRequest;
 import B2A4.demoday.domain.patient.dto.request.PatientUpdateRequest;
+import B2A4.demoday.domain.patient.dto.response.LocationPermissionResponse;
 import B2A4.demoday.domain.patient.dto.response.PatientLoginResponse;
 import B2A4.demoday.domain.patient.dto.request.PatientSignupRequest;
 import B2A4.demoday.domain.patient.dto.response.PatientSignupResponse;
@@ -94,4 +95,26 @@ public class PatientService {
                 "회원 정보가 수정되었습니다."
         );
     }
+
+     // 위치 정보 권한 조회
+     public CommonResponse<LocationPermissionResponse> getLocationPermission(Long patientId) {
+         Patient patient = patientRepository.findById(patientId)
+             .orElseThrow(() -> new NoSuchElementException("회원이 존재하지 않습니다."));
+
+         return CommonResponse.success(
+                         new LocationPermissionResponse(patient.isLocationPermission()),
+             "위치 정보 권한 조회 성공"
+         );
+     }
+
+     // 위치 정보 권한 수정
+     @Transactional
+     public CommonResponse<Void> updateLocationPermission(Long patientId, boolean permission) {
+         Patient patient = patientRepository.findById(patientId)
+             .orElseThrow(() -> new NoSuchElementException("회원이 존재하지 않습니다."));
+
+         patient.updateLocationPermission(permission);
+
+         return CommonResponse.success("위치 정보 권한 수정 성공");
+     }
 }
