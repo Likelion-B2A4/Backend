@@ -1,17 +1,14 @@
 package B2A4.demoday.domain.chat.service;
 
-import B2A4.demoday.domain.openai.dto.request.ChatRequest;
-import B2A4.demoday.domain.openai.dto.response.ChatResponse;
-import B2A4.demoday.domain.openai.dto.response.WhisperResponse;
-import B2A4.demoday.global.s3.AwsS3Service;
+import B2A4.demoday.global.openai.dto.request.ChatRequest;
+import B2A4.demoday.global.openai.dto.response.ChatResponse;
+import B2A4.demoday.global.openai.dto.response.WhisperResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;

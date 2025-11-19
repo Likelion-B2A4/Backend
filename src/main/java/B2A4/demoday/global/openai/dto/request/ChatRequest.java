@@ -1,4 +1,4 @@
-package B2A4.demoday.domain.openai.dto.request;
+package B2A4.demoday.global.openai.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
