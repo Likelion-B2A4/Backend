@@ -25,6 +25,9 @@ public class DemodayApplication {
 		// OPENAI 관련
 		System.setProperty("OPENAI_API_KEY", dotenv.get("OPENAI_API_KEY"));
 
+		// Kakao 관련
+		System.setProperty("KAKAO_API_KEY", dotenv.get("KAKAO_API_KEY"));
+
 		SpringApplication.run(DemodayApplication.class, args);
 	}
 }

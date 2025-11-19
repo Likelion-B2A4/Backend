@@ -24,10 +24,10 @@ public class Hospital extends BaseEntity {
     private Long id;
 
     @Column(name = "latitude")
-    private String latitude;
+    private Double latitude;
 
     @Column(name = "longitude")
-    private String longitude;
+    private Double longitude;
 
     @Column(name = "address", columnDefinition = "TEXT", nullable = false)
     private String address;

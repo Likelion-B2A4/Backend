@@ -18,6 +18,8 @@ public class HospitalSignupResponse {
     private String loginId;
     private String name;
     private String address;
+    private Double latitude;
+    private Double longitude;
     private String contact;
     private List<String> specialties;
     private String imageUrl;
@@ -43,6 +45,8 @@ public class HospitalSignupResponse {
                 .loginId(hospital.getLoginId())
                 .name(hospital.getName())
                 .address(hospital.getAddress())
+                .latitude(hospital.getLatitude())
+                .longitude(hospital.getLongitude())
                 .contact(hospital.getContact())
                 .specialties(JsonUtil.fromJson(hospital.getSpecialties()))
                 .imageUrl(hospital.getImageUrl())
