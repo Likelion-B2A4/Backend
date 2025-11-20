@@ -67,9 +67,11 @@ public class HospitalController {
     public CommonResponse<List<HospitalNearbyResponse>> getNearbyHospitals(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
-            @RequestParam(required = false) Double radius
+            @RequestParam(required = false) Double radius,
+            HttpServletRequest request
     ) {
-        List<HospitalNearbyResponse> response = hospitalService.getNearbyHospitals(lat, lng, radius);
+        Long patientId = (Long) request.getAttribute("userId");
+        List<HospitalNearbyResponse> response = hospitalService.getNearbyHospitals(lat, lng, radius, patientId);
         return CommonResponse.success(response, "병원 목록 조회 성공");
     }
 

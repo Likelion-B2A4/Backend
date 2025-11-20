@@ -11,6 +11,8 @@ import B2A4.demoday.domain.hospital.dto.response.HospitalLoginResponse;
 import B2A4.demoday.domain.hospital.entity.Hospital;
 import B2A4.demoday.domain.hospital.entity.HospitalOperatingHours;
 import B2A4.demoday.domain.hospital.repository.HospitalRepository;
+import B2A4.demoday.domain.patient.entity.Patient;
+import B2A4.demoday.domain.patient.repository.PatientRepository;
 import B2A4.demoday.global.jwt.JwtTokenProvider;
 import B2A4.demoday.global.kakao.service.KakaoAddressService;
 import B2A4.demoday.global.s3.AwsS3Service;
@@ -25,6 +27,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class HospitalService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AwsS3Service awsS3Service;
     private final KakaoAddressService kakaoAddressService;
+    private final PatientRepository patientRepository;
 
     // 병원 회원가입
     // 동일 병원이 존재하는지 검사
@@ -235,11 +239,44 @@ public class HospitalService {
         });
     }
 
-    //
+    // 미터 기준
     private static final double DEFAULT_RADIUS = 3000.0;
 
-    public List<HospitalNearbyResponse> getNearbyHospitals(Double lat, Double lng, Double radius) {
-        
+    public List<HospitalNearbyResponse> getNearbyHospitals(Double lat, Double lng, Double radius, Long patientId) {
+
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
+
+        if(lat == null || lng == null || !patient.isLocationPermission()) {
+            // default 주소는 홍대
+            double[] coordinate = kakaoAddressService.getCoordinate("서울특별시 마포구 와우산로 94");
+            if (coordinate != null) {
+                lat = coordinate[0]; // 위도
+                lng = coordinate[1]; // 경도
+            } else {
+                // 카카오 API 실패 시 하드코딩 값 사용
+                lat = 37.5509;
+                lng = 126.9255;
+            }
+        }
+
+        if(radius == null) {
+            radius = DEFAULT_RADIUS;
+        }
+
+        log.info("현재 검색 좌표: lat={}, lng={}, radius={}", lat, lng, radius);
+        List<Object[]> results = hospitalRepository.findNearbyHospitals(lat, lng, radius);
+
+        return results.stream()
+                .map(row -> HospitalNearbyResponse.builder()
+                        .hospitalId(((Number) row[0]).longValue())
+                        .hospitalName((String) row[1])
+                        .latitude((Double) row[2])
+                        .longitude((Double) row[3])
+                        .distance((Double) row[4]) // 미터
+                        .build())
+                .collect(Collectors.toList());
+
     }
 
 

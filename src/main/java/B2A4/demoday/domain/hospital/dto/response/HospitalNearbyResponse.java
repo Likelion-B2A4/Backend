@@ -10,4 +10,5 @@ public class HospitalNearbyResponse {
     private String hospitalName;
     private Double latitude;
     private Double longitude;
+    private Double distance;
 }
