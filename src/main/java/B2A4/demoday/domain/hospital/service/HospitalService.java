@@ -239,11 +239,14 @@ public class HospitalService {
     private static final double DEFAULT_RADIUS = 3000.0;
 
     public List<HospitalNearbyResponse> getNearbyHospitals(Double lat, Double lng, Double radius) {
-        return null;
+        
     }
 
 
     public HospitalSignupResponse getHospitalDetail(Long hospitalId) {
-        return null;
+        Hospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new NoSuchElementException("병원을 찾을 수 없습니다."));
+
+        return HospitalSignupResponse.from(hospital);
     }
 }
