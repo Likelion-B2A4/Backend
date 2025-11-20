@@ -5,14 +5,19 @@ import B2A4.demoday.domain.common.JsonUtil;
 import B2A4.demoday.domain.hospital.dto.request.HospitalSignupRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalLoginRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalUpdateRequest;
+import B2A4.demoday.domain.hospital.dto.response.HospitalNearbyResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalSignupResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalLoginResponse;
 import B2A4.demoday.domain.hospital.entity.Hospital;
 import B2A4.demoday.domain.hospital.entity.HospitalOperatingHours;
 import B2A4.demoday.domain.hospital.repository.HospitalRepository;
+import B2A4.demoday.domain.patient.entity.Patient;
+import B2A4.demoday.domain.patient.repository.PatientRepository;
 import B2A4.demoday.global.jwt.JwtTokenProvider;
+import B2A4.demoday.global.kakao.service.KakaoAddressService;
 import B2A4.demoday.global.s3.AwsS3Service;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,21 +27,41 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HospitalService {
 
     private final HospitalRepository hospitalRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AwsS3Service awsS3Service;
+    private final KakaoAddressService kakaoAddressService;
+    private final PatientRepository patientRepository;
 
     // 병원 회원가입
     // 동일 병원이 존재하는지 검사
+    @Transactional
     public CommonResponse<HospitalSignupResponse> signup(HospitalSignupRequest request, MultipartFile image) {
         if (hospitalRepository.existsByLoginId(request.getLoginId())) {
             throw new IllegalArgumentException("이미 존재하는 병원 아이디입니다.");
+        }
+
+        double[] coordinate;
+        try {
+            coordinate = kakaoAddressService.getCoordinate(request.getAddress());
+
+            if (coordinate == null) {
+                throw new IllegalArgumentException("입력하신 주소를 찾을 수 없습니다. 도로명 주소를 정확히 입력해주세요.");
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            // 카카오 API 호출 중 네트워크 에러, 키 만료 등 시스템 에러
+            log.error("주소 변환 중 시스템 오류 발생: address={}", request.getAddress(), e);
+            throw new RuntimeException("주소 변환 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
         }
 
         // 이미지 업로드
@@ -51,6 +76,8 @@ public class HospitalService {
                 .password(passwordEncoder.encode(request.getPwd()))
                 .name(request.getName())
                 .address(request.getAddress())
+                .latitude(coordinate[0])
+                .longitude(coordinate[1])
                 .contact(request.getContact())
                 .specialties(JsonUtil.toJson(request.getSpecialties())) // JSON 변환
                 .imageUrl(imageUrl != null ? imageUrl : request.getImageUrl()) // 파일 or 기존 URL 중 하나 사용
@@ -210,5 +237,53 @@ public class HospitalService {
 
             hospital.getOperatingHours().add(hours);
         });
+    }
+
+    // 미터 기준
+    private static final double DEFAULT_RADIUS = 3000.0;
+
+    public List<HospitalNearbyResponse> getNearbyHospitals(Double lat, Double lng, Double radius, Long patientId) {
+
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
+
+        if(lat == null || lng == null || !patient.isLocationPermission()) {
+            // default 주소는 홍대
+            double[] coordinate = kakaoAddressService.getCoordinate("서울특별시 마포구 와우산로 94");
+            if (coordinate != null) {
+                lat = coordinate[0]; // 위도
+                lng = coordinate[1]; // 경도
+            } else {
+                // 카카오 API 실패 시 하드코딩 값 사용
+                lat = 37.5509;
+                lng = 126.9255;
+            }
+        }
+
+        if(radius == null) {
+            radius = DEFAULT_RADIUS;
+        }
+
+        log.info("현재 검색 좌표: lat={}, lng={}, radius={}", lat, lng, radius);
+        List<Object[]> results = hospitalRepository.findNearbyHospitals(lat, lng, radius);
+
+        return results.stream()
+                .map(row -> HospitalNearbyResponse.builder()
+                        .hospitalId(((Number) row[0]).longValue())
+                        .hospitalName((String) row[1])
+                        .latitude((Double) row[2])
+                        .longitude((Double) row[3])
+                        .distance((Double) row[4]) // 미터
+                        .build())
+                .collect(Collectors.toList());
+
+    }
+
+
+    public HospitalSignupResponse getHospitalDetail(Long hospitalId) {
+        Hospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new NoSuchElementException("병원을 찾을 수 없습니다."));
+
+        return HospitalSignupResponse.from(hospital);
     }
 }

@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/ws/**", "/files/**", 
                                        "/api/hospitals/signup", "/api/hospitals/login", 
-                                       "/api/patients/signup", "/api/patients/login").permitAll()
+                                       "/api/patients/signup", "/api/patients/login", "api/test/geocode").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

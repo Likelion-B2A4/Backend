@@ -4,6 +4,7 @@ import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.hospital.dto.request.HospitalSignupRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalLoginRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalUpdateRequest;
+import B2A4.demoday.domain.hospital.dto.response.HospitalNearbyResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalSignupResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalLoginResponse;
 import B2A4.demoday.domain.hospital.service.HospitalService;
@@ -16,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -57,5 +60,25 @@ public class HospitalController {
         Long hospitalId = (Long) httpRequest.getAttribute(JwtAuthenticationFilter.ATTR_USER_ID);
         CommonResponse<HospitalSignupResponse> response = hospitalService.update(hospitalId, requestDto, image);
         return ResponseEntity.ok(response);
+    }
+
+    // 지도에서 가까운 병원 찾기
+    @GetMapping("/nearby")
+    public CommonResponse<List<HospitalNearbyResponse>> getNearbyHospitals(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Double radius,
+            HttpServletRequest request
+    ) {
+        Long patientId = (Long) request.getAttribute("userId");
+        List<HospitalNearbyResponse> response = hospitalService.getNearbyHospitals(lat, lng, radius, patientId);
+        return CommonResponse.success(response, "병원 목록 조회 성공");
+    }
+
+    // 병원 상세조회
+    @GetMapping("/{hospitalId}")
+    public CommonResponse<HospitalSignupResponse> getHospitalDetail(@PathVariable Long hospitalId) {
+        HospitalSignupResponse response = hospitalService.getHospitalDetail(hospitalId);
+        return CommonResponse.success(response, "병원 상세조회 성공");
     }
 }
