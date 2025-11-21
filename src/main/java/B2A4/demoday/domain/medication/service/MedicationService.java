@@ -3,9 +3,12 @@ package B2A4.demoday.domain.medication.service;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.medication.dto.request.MedicationRequest;
 import B2A4.demoday.domain.medication.dto.request.ScheduleRequest;
+import B2A4.demoday.domain.medication.dto.response.MedicationDailyResponse;
 import B2A4.demoday.domain.medication.dto.response.MedicationResponse;
+import B2A4.demoday.domain.medication.entity.MedicationHistory;
 import B2A4.demoday.domain.medication.entity.MedicationRecord;
 import B2A4.demoday.domain.medication.entity.MedicationSchedule;
+import B2A4.demoday.domain.medication.repository.MedicationHistoryRepository;
 import B2A4.demoday.domain.medication.repository.MedicationRecordRepository;
 import B2A4.demoday.domain.medication.repository.MedicationScheduleRepository;
 import B2A4.demoday.domain.patient.entity.Patient;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -31,6 +35,7 @@ public class MedicationService {
     private final PatientRepository patientRepository;
     private final MedicationRecordRepository medicationRecordRepository;
     private final MedicationScheduleRepository medicationScheduleRepository;
+    private final MedicationHistoryRepository historyRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 복약 일정 추가
@@ -150,6 +155,54 @@ public class MedicationService {
         return filteredRecords.stream()
                 .map(MedicationResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    // 복약 일정 조회(특정 날짜)
+    @Transactional(readOnly = true)
+    public List<MedicationDailyResponse> getDailyMedications(Long patientId, String dateStr) {
+
+        LocalDate date = LocalDate.parse(dateStr);
+
+        // 환자 약 전체 조회
+        List<MedicationRecord> records = medicationRecordRepository.findByPatient_Id(patientId);
+
+        // 날짜 기준 필터링
+        List<MedicationRecord> filtered = records.stream()
+                .filter(r ->
+                        (r.getStartDate() == null || !r.getStartDate().isAfter(date)) &&
+                                (r.getEndDate() == null || !r.getEndDate().isBefore(date))
+                )
+                .toList();
+
+        List<MedicationDailyResponse> result = new ArrayList<>();
+
+        for (MedicationRecord record : filtered) {
+
+            // 해당 record의 당일 history
+            List<MedicationHistory> histories =
+                    historyRepository.findAllByMedicationRecord_IdAndDate(record.getId(), date);
+
+            for (MedicationSchedule schedule : record.getSchedules()) {
+
+                // schedule.period 에 대응하는 history 찾아보기
+                MedicationHistory matched = histories.stream()
+                        .filter(h -> h.getPeriod().equals(schedule.getPeriod()))
+                        .findFirst()
+                        .orElse(null);
+
+                result.add(
+                        MedicationDailyResponse.builder()
+                                .recordId(record.getId())
+                                .name(record.getName())
+                                .period(schedule.getPeriod())
+                                .time(schedule.getTime().toString())
+                                .taken(matched != null ? matched.getTaken() : null)
+                                .build()
+                );
+            }
+        }
+
+        return result;
     }
 
     // 복약 일정 삭제

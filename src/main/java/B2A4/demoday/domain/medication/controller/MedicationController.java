@@ -1,9 +1,15 @@
 package B2A4.demoday.domain.medication.controller;
 
 import B2A4.demoday.domain.common.CommonResponse;
+import B2A4.demoday.domain.medication.dto.request.MedicationHistoryRequest;
 import B2A4.demoday.domain.medication.dto.request.MedicationRequest;
+import B2A4.demoday.domain.medication.dto.response.MedicationDailyResponse;
+import B2A4.demoday.domain.medication.dto.response.MedicationHistoryResponse;
 import B2A4.demoday.domain.medication.dto.response.MedicationResponse;
+import B2A4.demoday.domain.medication.service.MedicationHistoryService;
 import B2A4.demoday.domain.medication.service.MedicationService;
+import B2A4.demoday.global.jwt.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +23,7 @@ import java.util.List;
 public class MedicationController {
 
     private final MedicationService medicationService;
+    private final MedicationHistoryService historyService;
 
     // 복약 일정 추가
     @PostMapping
@@ -37,6 +44,16 @@ public class MedicationController {
         return medicationService.updateMedication(recordId, request);
     }
 
+    // 복용 여부 업데이트
+    @PatchMapping("/{recordId}/history")
+    public CommonResponse<MedicationHistoryResponse> updateHistory(
+            @AuthenticationPrincipal Long patientId,
+            @PathVariable Long recordId,
+            @RequestBody MedicationHistoryRequest request
+    ) {
+        return historyService.updateHistory(patientId, recordId, request);
+    }
+    
     // 복약 일정 조회
     @GetMapping
     public CommonResponse<List<MedicationResponse>> getMedications(
@@ -46,6 +63,20 @@ public class MedicationController {
         List<MedicationResponse> response = medicationService.getMedications(patientId, date);
         return CommonResponse.success(response, "복약 일정 조회 성공");
     }
+
+
+    // 복약 일정 조회(특정 날짜)
+    @GetMapping("/daily")
+    public CommonResponse<List<MedicationDailyResponse>> getMedicationsByDate(
+            @AuthenticationPrincipal Long patientId,
+            @RequestParam String date
+    ) {
+        List<MedicationDailyResponse> response =
+                medicationService.getDailyMedications(patientId, date);
+
+        return CommonResponse.success(response, "특정 날짜 복약 조회 성공");
+    }
+
 
     // 복약 일정 삭제
     @DeleteMapping("/{recordId}")
