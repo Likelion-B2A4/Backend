@@ -205,7 +205,7 @@ public class MedicationService {
         return result;
     }
 
-    // 복약 일정 삭제
+    // 복약 일정 삭제(record 삭제)
     @Transactional
     public void deleteMedication(Long patientId, Long recordId) {
         MedicationRecord record = medicationRecordRepository.findById(recordId)
@@ -216,5 +216,79 @@ public class MedicationService {
         }
 
         medicationRecordRepository.delete(record);
+    }
+
+    // 복약 일정 삭제(해당 날짜 OR 해당 날짜 포함 이후까지)
+    @Transactional
+    public void deleteMedicationByDate(Long patientId, Long recordId, String targetDateStr, String type) {
+
+        MedicationRecord record = medicationRecordRepository.findById(recordId)
+                .orElseThrow(() -> new NoSuchElementException("해당 복약 일정을 찾을 수 없습니다."));
+
+        if (!record.getPatient().getId().equals(patientId)) {
+            throw new SecurityException("본인 복약 일정만 삭제할 수 있습니다.");
+        }
+
+        LocalDate targetDate = LocalDate.parse(targetDateStr);
+
+        LocalDate start = record.getStartDate();
+        LocalDate end = record.getEndDate();
+
+        if (targetDate.isBefore(start) || targetDate.isAfter(end)) {
+            throw new IllegalArgumentException("해당 날짜는 복약 일정 범위에 포함되지 않습니다.");
+        }
+
+        // 1. 해당 날짜만 제거
+        if (type.equals("single")) {
+
+            // targetDate == startDate & endDate → 전체 삭제
+            if (start.equals(end)) {
+                medicationRecordRepository.delete(record);
+                return;
+            }
+
+            // targetDate == startDate → startDate += 1
+            if (targetDate.equals(start)) {
+                record.updateStartDate(start.plusDays(1));
+                return;
+            }
+
+            // targetDate == endDate → endDate -= 1
+            if (targetDate.equals(end)) {
+                record.updateEndDate(end.minusDays(1));
+                return;
+            }
+
+            // other → 2개로 분할
+            MedicationRecord newRecord = MedicationRecord.builder()
+                    .patient(record.getPatient())
+                    .name(record.getName())
+                    .startDate(targetDate.plusDays(1))
+                    .endDate(end)
+                    .alarmEnabled(record.getAlarmEnabled())
+                    .daysOfWeek(record.getDaysOfWeek())
+                    .build();
+
+            medicationRecordRepository.save(newRecord);
+
+            // 기존 record는 앞부분만 남김
+            record.updateEndDate(targetDate.minusDays(1));
+            return;
+        }
+
+        // 2. 해당 날짜 포함 이후 삭제 (endDate = targetDate - 1)
+        else if (type.equals("after")) {
+
+            if (targetDate.equals(start)) {
+                // 시작부터 모두 삭제하는 경우 → 전체 삭제
+                medicationRecordRepository.delete(record);
+                return;
+            }
+
+            record.updateEndDate(targetDate.minusDays(1));
+            return;
+        }
+
+        throw new IllegalArgumentException("잘못된 삭제 타입입니다. type은 'single' 또는 'after' 이어야 합니다.");
     }
 }

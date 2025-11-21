@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -78,7 +79,7 @@ public class MedicationController {
     }
 
 
-    // 복약 일정 삭제
+    // 복약 일정 삭제(record 삭제)
     @DeleteMapping("/{recordId}")
     public CommonResponse<Void> deleteMedication(
             @AuthenticationPrincipal Long patientId,
@@ -86,5 +87,39 @@ public class MedicationController {
 
         medicationService.deleteMedication(patientId, recordId);
         return CommonResponse.success(null, "복약 일정이 삭제되었습니다.");
+    }
+
+    // 복약 일정 삭제(해당 날짜)
+    @DeleteMapping("/{recordId}/single")
+    public CommonResponse<Void> deleteSingleDay(
+            @AuthenticationPrincipal Long patientId,
+            @PathVariable Long recordId,
+            @RequestParam String date
+    ) {
+        medicationService.deleteMedicationByDate(
+                patientId,
+                recordId,
+                date,
+                "single"
+        );
+
+        return CommonResponse.success(null, "해당 날짜 복약 일정이 삭제되었습니다.");
+    }
+
+    // 복약 일정 삭제(해당 날짜 포함 이후까지)
+    @DeleteMapping("/{recordId}/after")
+    public CommonResponse<Void> deleteAfterDay(
+            @AuthenticationPrincipal Long patientId,
+            @PathVariable Long recordId,
+            @RequestParam String date
+    ) {
+        medicationService.deleteMedicationByDate(
+                patientId,
+                recordId,
+                date,
+                "after"
+        );
+
+        return CommonResponse.success(null, "해당 날짜 포함 이후 복약 일정이 삭제되었습니다.");
     }
 }
