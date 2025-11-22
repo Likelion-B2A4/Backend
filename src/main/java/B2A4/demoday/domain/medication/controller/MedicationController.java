@@ -5,6 +5,7 @@ import B2A4.demoday.domain.medication.dto.request.MedicationHistoryRequest;
 import B2A4.demoday.domain.medication.dto.request.MedicationRequest;
 import B2A4.demoday.domain.medication.dto.response.MedicationDailyResponse;
 import B2A4.demoday.domain.medication.dto.response.MedicationHistoryResponse;
+import B2A4.demoday.domain.medication.dto.response.MedicationMonthlyResponse;
 import B2A4.demoday.domain.medication.dto.response.MedicationResponse;
 import B2A4.demoday.domain.medication.service.MedicationHistoryService;
 import B2A4.demoday.domain.medication.service.MedicationService;
@@ -65,6 +66,18 @@ public class MedicationController {
         return CommonResponse.success(response, "복약 일정 조회 성공");
     }
 
+    // 특정 달 복약 일정 조회
+    @GetMapping("/month")
+    public CommonResponse<List<MedicationMonthlyResponse>> getMedicationsByMonth(
+            @AuthenticationPrincipal Long patientId,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        List<MedicationMonthlyResponse> response =
+                medicationService.getMonthlyMedications(patientId, year, month);
+
+        return CommonResponse.success(response, "복약 일정 조회 성공");
+    }
 
     // 복약 일정 조회(특정 날짜)
     @GetMapping("/daily")
