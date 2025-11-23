@@ -10,8 +10,14 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MedicationMonthlyResponse {
-
     private Long recordId;
     private String name;
-    private List<String> days;
+    private List<DayStatus> days;
+
+    @Data
+    @AllArgsConstructor
+    public static class DayStatus {
+        private String date;
+        private Boolean taken;
+    }
 }

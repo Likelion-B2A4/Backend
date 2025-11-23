@@ -1,6 +1,7 @@
 package B2A4.demoday.domain.medication.service;
 
 import B2A4.demoday.domain.common.CommonResponse;
+import B2A4.demoday.domain.common.JsonUtil;
 import B2A4.demoday.domain.medication.dto.request.MedicationRequest;
 import B2A4.demoday.domain.medication.dto.request.ScheduleRequest;
 import B2A4.demoday.domain.medication.dto.response.MedicationDailyResponse;
@@ -25,9 +26,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +38,7 @@ public class MedicationService {
     private final MedicationScheduleRepository medicationScheduleRepository;
     private final MedicationHistoryRepository historyRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final MedicationHistoryRepository medicationHistoryRepository;
 
     // 복약 일정 추가
     public MedicationResponse createMedication(Long patientId, MedicationRequest request) {
@@ -163,81 +163,80 @@ public class MedicationService {
     @Transactional(readOnly = true)
     public List<MedicationMonthlyResponse> getMonthlyMedications(Long patientId, int year, int month) {
 
-        List<MedicationRecord> records = medicationRecordRepository.findByPatient_Id(patientId);
-
         LocalDate firstDay = LocalDate.of(year, month, 1);
         LocalDate lastDay = firstDay.withDayOfMonth(firstDay.lengthOfMonth());
 
-        return records.stream()
-                .map(record -> {
+        List<MedicationRecord> records =
+                medicationRecordRepository.findAllByPatient_IdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        patientId, lastDay, firstDay);
 
-                    // 기간 안 겹치면 제외
-                    if (record.getEndDate().isBefore(firstDay) || record.getStartDate().isAfter(lastDay)) {
-                        return null;
-                    }
+        List<Long> recordIds = records.stream()
+                .map(MedicationRecord::getId)
+                .toList();
 
-                    // 요일 JSON 파싱
-                    List<String> daysOfWeek = parseDaysOfWeek(record.getDaysOfWeek());
+        // 이번 달 history 전부 가져오기
+        List<MedicationHistory> histories =
+                medicationHistoryRepository.findAllByMedicationRecord_IdInAndDateBetween(
+                        recordIds, firstDay, lastDay);
 
-                    // 실제 해당 달 날짜 계산
-                    List<String> actualDays = calculateMedicationDays(
-                            record.getStartDate(),
-                            record.getEndDate(),
-                            daysOfWeek,
-                            year, month
-                    );
-
-                    if (actualDays.isEmpty()) return null;
-
-                    return MedicationMonthlyResponse.builder()
-                            .recordId(record.getId())
-                            .name(record.getName())
-                            .days(actualDays)
-                            .build();
-                })
-                .filter(r -> r != null)
-                .collect(Collectors.toList());
-    }
-
-    // JSON → 요일 리스트 파싱 함수
-    private List<String> parseDaysOfWeek(String json) {
-        try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
-        } catch (Exception e) {
-            return List.of();
+        // history를 recordId -> date -> List<History> 로 매핑
+        Map<Long, Map<LocalDate, List<MedicationHistory>>> historyMap = new HashMap<>();
+        for (MedicationHistory h : histories) {
+            historyMap
+                    .computeIfAbsent(h.getMedicationRecord().getId(), k -> new HashMap<>())
+                    .computeIfAbsent(h.getDate(), k -> new ArrayList<>())
+                    .add(h);
         }
-    }
 
-    // 실제 해당 달 날짜 계산 함수
-    private List<String> calculateMedicationDays(
-            LocalDate startDate,
-            LocalDate endDate,
-            List<String> daysOfWeek,
-            int year,
-            int month
-    ) {
-        LocalDate firstDay = LocalDate.of(year, month, 1);
-        LocalDate lastDay = firstDay.withDayOfMonth(firstDay.lengthOfMonth());
+        List<MedicationMonthlyResponse> response = new ArrayList<>();
 
-        List<String> result = new ArrayList<>();
-        LocalDate curr = firstDay;
+        // 레코드별 날짜 계산
+        for (MedicationRecord record : records) {
 
-        while (!curr.isAfter(lastDay)) {
+            // JSON → 요일 리스트
+            List<String> scheduleDays = JsonUtil.fromJson(record.getDaysOfWeek()); // MON, TUE ...
 
-            // 기록 범위 안의 날짜만
-            if (!curr.isBefore(startDate) && !curr.isAfter(endDate)) {
+            List<MedicationMonthlyResponse.DayStatus> resultDays = new ArrayList<>();
 
-                String dow = curr.getDayOfWeek().name().substring(0, 3); // MON/TUE...
+            LocalDate date = firstDay;
+            while (!date.isAfter(lastDay)) {
 
-                if (daysOfWeek.contains(dow)) {
-                    result.add(curr.toString());
+                // 기록 범위 내에 있는 날짜인지
+                if (!date.isBefore(record.getStartDate()) && !date.isAfter(record.getEndDate())) {
+
+                    // 해당 요일인지
+                    String dow = date.getDayOfWeek().name().substring(0, 3);
+                    if (scheduleDays.contains(dow)) {
+
+                        // 해당 날짜의 history 조회
+                        List<MedicationHistory> dayHistory =
+                                historyMap.getOrDefault(record.getId(), new HashMap<>())
+                                        .getOrDefault(date, new ArrayList<>());
+
+                        // 해당 날짜의 모든 period 복약이 true면 taken=true
+                        boolean allTaken = !dayHistory.isEmpty() &&
+                                dayHistory.stream().allMatch(MedicationHistory::getTaken);
+
+                        resultDays.add(new MedicationMonthlyResponse.DayStatus(
+                                date.toString(),
+                                allTaken
+                        ));
+                    }
                 }
+
+                date = date.plusDays(1);
             }
 
-            curr = curr.plusDays(1);
+            response.add(
+                    MedicationMonthlyResponse.builder()
+                            .recordId(record.getId())
+                            .name(record.getName())
+                            .days(resultDays)
+                            .build()
+            );
         }
 
-        return result;
+        return response;
     }
 
     // 복약 일정 조회(특정 날짜)
