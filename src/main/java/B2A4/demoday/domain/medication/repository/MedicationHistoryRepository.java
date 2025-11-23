@@ -4,6 +4,7 @@ import B2A4.demoday.domain.medication.entity.MedicationHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,8 +15,14 @@ public interface MedicationHistoryRepository extends JpaRepository<MedicationHis
             String period
     );
 
+    List<MedicationHistory> findAllByMedicationRecord_IdInAndDateBetween(
+            Collection<Long> medicationRecordIds,
+            LocalDate dateAfter,
+            LocalDate dateBefore
+    );
+
     List<MedicationHistory> findAllByMedicationRecord_IdAndDate(
-            Long recordId,
+            Long medicationRecordId,
             LocalDate date
     );
 }
