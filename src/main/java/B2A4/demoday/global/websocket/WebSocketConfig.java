@@ -22,7 +22,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws/chat")
                 .setAllowedOrigins(
                         "http://localhost:3000",
-                        "https://sonbit.site"
+                        "https://sonbit.site",
+                        "https://www.sonbit.site"
                 );
     }
 
