@@ -1,10 +1,12 @@
 package B2A4.demoday.domain.hospital.service;
 
+import B2A4.demoday.domain.bookmark.repository.BookmarkRepository;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.common.JsonUtil;
 import B2A4.demoday.domain.hospital.dto.request.HospitalSignupRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalLoginRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalUpdateRequest;
+import B2A4.demoday.domain.hospital.dto.response.HospitalDetailResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalNearbyResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalSignupResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalLoginResponse;
@@ -40,6 +42,7 @@ public class HospitalService {
     private final AwsS3Service awsS3Service;
     private final KakaoAddressService kakaoAddressService;
     private final PatientRepository patientRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     // 병원 회원가입
     // 동일 병원이 존재하는지 검사
@@ -280,10 +283,16 @@ public class HospitalService {
     }
 
 
-    public HospitalSignupResponse getHospitalDetail(Long hospitalId) {
+    public HospitalDetailResponse getHospitalDetail(Long hospitalId, Long patientId) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new NoSuchElementException("병원을 찾을 수 없습니다."));
 
-        return HospitalSignupResponse.from(hospital);
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new NoSuchElementException("회원이 존재하지 않습니다."));
+
+        // 해당 환자의 즐겨찾기 리스트에 hospital 이 있는지 확인
+        boolean exists = bookmarkRepository.existsByPatientAndHospital(patient, hospital);
+
+        return HospitalDetailResponse.from(hospital, exists);
     }
 }

@@ -4,6 +4,7 @@ import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.hospital.dto.request.HospitalSignupRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalLoginRequest;
 import B2A4.demoday.domain.hospital.dto.request.HospitalUpdateRequest;
+import B2A4.demoday.domain.hospital.dto.response.HospitalDetailResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalNearbyResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalSignupResponse;
 import B2A4.demoday.domain.hospital.dto.response.HospitalLoginResponse;
@@ -77,8 +78,12 @@ public class HospitalController {
 
     // 병원 상세조회
     @GetMapping("/{hospitalId}")
-    public CommonResponse<HospitalSignupResponse> getHospitalDetail(@PathVariable Long hospitalId) {
-        HospitalSignupResponse response = hospitalService.getHospitalDetail(hospitalId);
+    public CommonResponse<HospitalDetailResponse> getHospitalDetail(
+            @PathVariable Long hospitalId,
+            HttpServletRequest request
+    ) {
+        Long patientId = (Long) request.getAttribute("userId");
+        HospitalDetailResponse response = hospitalService.getHospitalDetail(hospitalId, patientId);
         return CommonResponse.success(response, "병원 상세조회 성공");
     }
 }
