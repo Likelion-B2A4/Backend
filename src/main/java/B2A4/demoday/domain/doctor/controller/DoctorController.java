@@ -1,5 +1,6 @@
 package B2A4.demoday.domain.doctor.controller;
 
+import B2A4.demoday.domain.chat.dto.response.ChatRoomInfoResponse;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.doctor.dto.request.DoctorRegisterRequest;
 import B2A4.demoday.domain.doctor.dto.request.DoctorSelectRequest;
@@ -69,5 +70,11 @@ public class DoctorController {
     @PostMapping("doctors/{doctorId}/regenerate-qr")
     public CommonResponse<DoctorQrRegenerateResponse> regenerateDoctorQr(@PathVariable Long doctorId) {
         return doctorService.regenerateDoctorQr(doctorId);
+    }
+
+    // 채팅방 목록 조회
+    @GetMapping("doctors/{doctorId}/chats")
+    public CommonResponse<List<ChatRoomInfoResponse>> getChatRoomList(@PathVariable Long doctorId) {
+        return doctorService.getMyChatRoomList(doctorId);
     }
 }

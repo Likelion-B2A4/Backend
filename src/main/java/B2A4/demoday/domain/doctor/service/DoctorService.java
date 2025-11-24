@@ -1,5 +1,9 @@
 package B2A4.demoday.domain.doctor.service;
 
+import B2A4.demoday.domain.chat.dto.response.ChatRoomInfoResponse;
+import B2A4.demoday.domain.chat.entity.ChatRoom;
+import B2A4.demoday.domain.chat.repository.ChatRoomRepository;
+import B2A4.demoday.domain.chat.service.ChatService;
 import B2A4.demoday.domain.common.CommonResponse;
 import B2A4.demoday.domain.doctor.dto.request.DoctorRegisterRequest;
 import B2A4.demoday.domain.doctor.dto.request.DoctorSelectRequest;
@@ -31,6 +35,7 @@ public class DoctorService {
     private final HospitalRepository hospitalRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final AwsS3Service awsS3Service;
+    private final ChatService chatService;
 
     // 공용 QR 코드 생성
     private String generateUniqueQrCode(Long hospitalId) {
@@ -183,5 +188,16 @@ public class DoctorService {
 
         DoctorQrRegenerateResponse response = DoctorQrRegenerateResponse.from(doctor, previousQr);
         return CommonResponse.success(response, "QR 코드 재발급 성공");
+    }
+
+    public CommonResponse<List<ChatRoomInfoResponse>> getMyChatRoomList(Long doctorId) {
+        // 1. 의사찾기
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new NoSuchElementException("의사를 찾을 수 없습니다."));
+
+        // 2. 채팅방 리스트 찾기
+        List<ChatRoomInfoResponse> response = chatService.getDoctorChatRooms(doctorId);
+
+        return CommonResponse.success(response, "의사의 채팅방 목록 조회 성공");
     }
 }
