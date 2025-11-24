@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     List<Bookmark> findByPatient(Patient patient);
     Optional<Bookmark> findByPatientAndHospital(Patient patient, Hospital hospital);
+    boolean existsByPatientAndHospital(Patient patient, Hospital hospital);
 }
