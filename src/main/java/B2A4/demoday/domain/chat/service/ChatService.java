@@ -1,10 +1,7 @@
 package B2A4.demoday.domain.chat.service;
 
 import B2A4.demoday.domain.chat.dto.request.ChatQrRequest;
-import B2A4.demoday.domain.chat.dto.response.ChatCloseNotification;
-import B2A4.demoday.domain.chat.dto.response.ChatMessageResponse;
-import B2A4.demoday.domain.chat.dto.response.ChatRoomResponse;
-import B2A4.demoday.domain.chat.dto.response.OriginalVoiceUrlResponse;
+import B2A4.demoday.domain.chat.dto.response.*;
 import B2A4.demoday.domain.chat.entity.ChatMessage;
 import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.chat.repository.ChatMessageRepository;
@@ -256,5 +253,20 @@ public class ChatService {
                 .build();
 
         return CommonResponse.success(response, "원본 파일 url 조회 성공");
+    }
+
+    public List<ChatRoomInfoResponse> getDoctorChatRooms(Long doctorId) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findAllByDoctorId(doctorId);
+
+        return chatRooms.stream()
+                .map(chatRoom -> ChatRoomInfoResponse.builder()
+                        .chatRoomId(chatRoom.getId())
+                        .patientId(chatRoom.getPatient().getId())
+                        .patientName(chatRoom.getPatient().getName())
+                        .status(chatRoom.getStatus())
+                        .startedAt(chatRoom.getStartedAt())
+                        .finishedAt(chatRoom.getFinishedAt())
+                        .build())
+                .collect(Collectors.toList());
     }
 }
