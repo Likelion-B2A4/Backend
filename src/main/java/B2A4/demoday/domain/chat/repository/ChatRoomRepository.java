@@ -17,4 +17,6 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     @Query("SELECT c FROM ChatRoom c JOIN FETCH c.patient WHERE c.doctor.id = :doctorId")
     List<ChatRoom> findAllByDoctorId(Long doctorId);
+
+    List<ChatRoom> findAllByStatusAndStartedAtBefore(String status, LocalDateTime threshold);
 }
