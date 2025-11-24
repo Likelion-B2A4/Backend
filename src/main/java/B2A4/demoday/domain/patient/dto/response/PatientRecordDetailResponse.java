@@ -16,6 +16,7 @@ public class PatientRecordDetailResponse {
     private Long doctorId;
     private String doctorName;
     private String specialty;
+    private String doctorImageUrl;
 
     private String status;
     private String startedAt;
@@ -35,6 +36,7 @@ public class PatientRecordDetailResponse {
                 .doctorId(doctor.getId())
                 .doctorName(doctor.getName())
                 .specialty(doctor.getSpecialty())
+                .doctorImageUrl(doctor.getImageUrl())
                 .status(room.getStatus())
                 .startedAt(room.getStartedAt().toString())
                 .finishedAt(room.getFinishedAt().toString())
