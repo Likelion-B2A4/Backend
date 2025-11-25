@@ -295,4 +295,19 @@ public class HospitalService {
 
         return HospitalDetailResponse.from(hospital, exists);
     }
+
+    public List<HospitalNearbyResponse> getAllHospitals() {
+        List<Hospital> hospitals = hospitalRepository.findAll();
+
+        return hospitals.stream()
+                .map(hospital -> HospitalNearbyResponse.builder()
+                        .hospitalId(hospital.getId())
+                        .hospitalName(hospital.getName())
+                        .latitude(hospital.getLatitude())
+                        .longitude(hospital.getLongitude())
+                        .distance(null)
+                        .build())
+                .collect(Collectors.toList());
+
+    }
 }

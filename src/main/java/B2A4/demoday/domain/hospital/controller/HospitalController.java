@@ -86,4 +86,13 @@ public class HospitalController {
         HospitalDetailResponse response = hospitalService.getHospitalDetail(hospitalId, patientId);
         return CommonResponse.success(response, "병원 상세조회 성공");
     }
+
+    // 모든 병원의 위치 조회
+    @GetMapping("/all")
+    public CommonResponse<List<HospitalNearbyResponse>> getAllHospitals(
+            HttpServletRequest request
+    ) {
+        List<HospitalNearbyResponse> response = hospitalService.getAllHospitals();
+        return CommonResponse.success(response, "모든 병원 위치 조회 성공");
+    }
 }
