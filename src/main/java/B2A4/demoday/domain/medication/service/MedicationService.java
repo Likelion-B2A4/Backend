@@ -326,12 +326,14 @@ public class MedicationService {
             // targetDate == startDate & endDate → 전체 삭제
             if (start.equals(end)) {
                 medicationRecordRepository.delete(record);
+                medicationRecordRepository.saveAndFlush(record);
                 return;
             }
 
             // targetDate == startDate → startDate += 1
             if (targetDate.equals(start)) {
                 record.updateStartDate(start.plusDays(1));
+                medicationRecordRepository.saveAndFlush(record);
                 return;
             }
 
@@ -351,10 +353,11 @@ public class MedicationService {
                     .daysOfWeek(record.getDaysOfWeek())
                     .build();
 
-            medicationRecordRepository.save(newRecord);
+            medicationRecordRepository.saveAndFlush(newRecord);
 
             // 기존 record는 앞부분만 남김
             record.updateEndDate(targetDate.minusDays(1));
+            medicationRecordRepository.saveAndFlush(record);
             return;
         }
 
