@@ -43,14 +43,10 @@ public class AISummaryService {
             }
 
             String conversationText = buildConversation(messages);
-
             AISummaryResult result = callOpenAiForSummary(conversationText);
 
-            ChatRoom room = chatRoomRepository.findById(chatRoomId)
-                    .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
-
-            room.updateSymptomSummary(result.getSymptomSummary());
-            room.updateDiagnosisSummary(result.getDiagnosisSummary());
+            // 롤백 문제 해결을 위해 곧장 업데이트만 진행
+            chatRoomRepository.updateSummary(chatRoomId, result.getDiagnosisSummary(), result.getSymptomSummary());
 
             log.info("[AI 요약 완료] chatRoomId={}", chatRoomId);
 

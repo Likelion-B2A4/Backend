@@ -4,7 +4,9 @@ import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.doctor.entity.Doctor;
 import B2A4.demoday.domain.patient.entity.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,4 +21,8 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     List<ChatRoom> findAllByDoctorId(Long doctorId);
 
     List<ChatRoom> findAllByStatusAndStartedAtBefore(String status, LocalDateTime threshold);
+
+    @Modifying
+    @Query("UPDATE ChatRoom c SET c.diagnosisSummary = :diagnosis, c.symptomSummary = :symptom WHERE c.id = :id")
+    void updateSummary(@Param("id") Long id, @Param("diagnosis") String diagnosis, @Param("symptom") String symptom);
 }
