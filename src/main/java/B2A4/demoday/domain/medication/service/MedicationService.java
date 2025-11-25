@@ -18,6 +18,8 @@ import B2A4.demoday.domain.patient.repository.PatientRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,9 @@ public class MedicationService {
     private final MedicationHistoryRepository historyRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final MedicationHistoryRepository medicationHistoryRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // 복약 일정 추가
     public MedicationResponse createMedication(Long patientId, MedicationRequest request) {
@@ -326,7 +331,8 @@ public class MedicationService {
             // targetDate == startDate & endDate → 전체 삭제
             if (start.equals(end)) {
                 medicationRecordRepository.delete(record);
-                medicationRecordRepository.saveAndFlush(record);
+                entityManager.flush();
+                entityManager.detach(record);
                 return;
             }
 
