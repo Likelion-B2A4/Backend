@@ -13,6 +13,7 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
     Optional<Hospital> findByLoginId(String loginId);
     boolean existsByLoginId(String loginId);
 
+
     // POINT(경도,위도) 순서 주의
     @Query(value = "SELECT h.id, h.name, h.latitude, h.longitude, " +
             "ST_Distance_Sphere(POINT(h.longitude, h.latitude), POINT(:myLng, :myLat)) AS distance " +
