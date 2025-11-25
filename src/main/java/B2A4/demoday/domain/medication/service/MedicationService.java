@@ -359,7 +359,20 @@ public class MedicationService {
                     .daysOfWeek(record.getDaysOfWeek())
                     .build();
 
+            // 신규 record 저장
             medicationRecordRepository.saveAndFlush(newRecord);
+
+            // 스케줄 복사
+            List<MedicationSchedule> copiedSchedules = record.getSchedules().stream()
+                    .map(s -> MedicationSchedule.builder()
+                            .medicationRecord(newRecord)
+                            .period(s.getPeriod())
+                            .time(s.getTime())
+                            .enabled(s.getEnabled())
+                            .build())
+                    .toList();
+
+            medicationScheduleRepository.saveAll(copiedSchedules);
 
             // 기존 record는 앞부분만 남김
             record.updateEndDate(targetDate.minusDays(1));
