@@ -68,6 +68,10 @@ public class ChatService {
         ChatRoom savedRoom = chatRoomRepository.save(newRoom);
         ChatRoomResponse response = ChatRoomResponse.from(savedRoom);
 
+        log.info("========== [알림 전송 시도] ==========");
+        log.info("1. DB에서 찾은 의사 ID: {}", doctor.getId());
+        log.info("2. 전송 타겟 경로: /sub/doctors/{}", doctor.getId());
+
         // 의사에게 Websocket 으로 새 채팅방 알림 전송
         messagingTemplate.convertAndSend("/sub/doctors/" + doctor.getId(), response);
 
