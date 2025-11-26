@@ -195,8 +195,8 @@ public class ChatService {
                 .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
 
         // 3. 의사 본인 확인
-        if (!room.getDoctor().getId().equals(userId)) {
-            throw new AccessDeniedException("해당 채팅방의 의사가 아닙니다.");
+        if (!room.getDoctor().getHospital().getId().equals(userId)) {
+            throw new AccessDeniedException("본인 병원 소속 의사의 채팅방이 아닙니다.");
         }
 
         // 4. STT 변환
@@ -211,7 +211,7 @@ public class ChatService {
         ChatMessage message = ChatMessage.builder()
                 .chatRoom(room)
                 .senderType("hospital")
-                .senderId(userId)
+                .senderId(room.getDoctor().getId())
                 .messageType("voice")
                 .content(convertedText)
                 .originalAudioUrl(voiceUrl)
