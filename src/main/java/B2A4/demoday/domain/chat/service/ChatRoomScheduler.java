@@ -22,7 +22,6 @@ class ChatRoomScheduler {
 
     // 30분마다 실행
     @Scheduled(cron = "0 0/30 * * * *")
-    @Transactional
     public void autoCloseExpiredChatRooms() {
         // 기준: 현재 시간으로부터 3시간 전
         LocalDateTime threshold = LocalDateTime.now().minusHours(3);
@@ -31,17 +30,31 @@ class ChatRoomScheduler {
         List<ChatRoom> expiredRooms = chatRoomRepository
                 .findAllByStatusAndStartedAtBefore("active", threshold);
 
-        for (ChatRoom room : expiredRooms) {
-            log.info("[자동 종료] 진료 제한 시간(3시간) 초과로 종료. id={}, startedAt={}",
-                    room.getId(), room.getStartedAt());
-
-            // 종료 처리
-            room.updateStatus("closed");
-            room.updateFinishedAt(LocalDateTime.now());
-            chatRoomRepository.save(room);
-
-            summaryService.generateSummaryAsync(room.getId());
+        if (expiredRooms.isEmpty()) {
+            return;
         }
+
+        log.info("[자동 종료 스케줄러] {}개의 만료된 채팅방 발견", expiredRooms.size());
+
+        for (ChatRoom room : expiredRooms) {
+            try {
+                processAutoClose(room);
+            } catch (Exception e) {
+                log.error("[자동 종료 실패] chatRoomId={} 처리 중 오류 발생", room.getId(), e);
+            }
+        }
+    }
+
+    private void processAutoClose(ChatRoom room) {
+        log.info("[자동 종료 진행] id={}, startedAt={}", room.getId(), room.getStartedAt());
+
+        room.updateStatus("closed");
+        room.updateFinishedAt(LocalDateTime.now());
+
+        // 즉시 커밋으로 수정
+        chatRoomRepository.saveAndFlush(room);
+
+        summaryService.generateSummaryAsync(room.getId());
     }
 
 }
