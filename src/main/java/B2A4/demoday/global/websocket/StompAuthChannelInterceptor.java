@@ -120,11 +120,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         Matcher doctorMatcher = doctorPattern.matcher(destination);
         if (doctorMatcher.matches()) {
             Long doctorId = Long.parseLong(doctorMatcher.group(1));
-            
-            // 본인 확인
-            if (!userId.equals(doctorId)) {
-                log.warn("[STOMP SUBSCRIBE] 의사 본인이 아닌 구독 시도: userId={}, doctorId={}", userId, doctorId);
-                throw new IllegalArgumentException("다른 의사의 알림을 구독할 수 없습니다.");
+
+            boolean isHospital = "hospital".equals(userType); // 혹은 userType 확인
+
+            if (!isHospital) {
+                // 병원도 아니면 차단
+                log.warn("[STOMP SUBSCRIBE] 권한 없는 구독 시도");
+                throw new IllegalArgumentException("권한이 없습니다.");
             }
 
             // 세션 매니저에 연결 상태 등록
