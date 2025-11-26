@@ -228,9 +228,13 @@ public class ChatService {
         ChatRoom room = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
 
-        // 2. userId 와 userType 이 속한 채팅방인지 검증
-        if ("hospital".equals(userType) && !room.getDoctor().getId().equals(userId)) {
-            throw new AccessDeniedException("해당 의사가 아닙니다.");
+        // 2. userId 와 userType 이 속한 채팅방인지 검증 -> 이때 userId는 hospitalID
+        if ("hospital".equals(userType)) {
+            Long doctorHospitalId = room.getDoctor().getHospital().getId();
+
+            if (!doctorHospitalId.equals(userId)) {
+                throw new AccessDeniedException("본인 병원의 채팅방이 아닙니다.");
+            }
         }
         if ("patient".equals(userType) && !room.getPatient().getId().equals(userId)) {
             throw new AccessDeniedException("해당 환자가 아닙니다.");
