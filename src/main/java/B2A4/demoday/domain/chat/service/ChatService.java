@@ -92,6 +92,9 @@ public class ChatService {
         // AI 요약 비동기 생성 트리거
         summaryService.generateSummaryAsync(chatRoomId);
 
+        // 의사 최근 진료 반영
+        Doctor doctor = room.getDoctor();
+        doctor.setLastTreatment(LocalDateTime.now().toString());
 
         return CommonResponse.success(
                 ChatRoomResponse.from(room),
