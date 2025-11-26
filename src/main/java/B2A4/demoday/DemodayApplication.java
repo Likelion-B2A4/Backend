@@ -1,13 +1,27 @@
 package B2A4.demoday;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.util.Date;
+import java.util.TimeZone;
 
 @EnableJpaAuditing
+@EnableAsync
+@EnableScheduling
 @SpringBootApplication
 public class DemodayApplication {
+
+	@PostConstruct
+	public void started() {
+		// 서울 표준 시 고정
+		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+	}
 
 	public static void main(String[] args) {
 		// .env 파일 로드
