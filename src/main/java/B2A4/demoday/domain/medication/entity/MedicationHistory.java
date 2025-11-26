@@ -42,4 +42,8 @@ public class MedicationHistory extends BaseEntity {
         this.taken = taken;
         this.takenAt = taken ? LocalDateTime.now() : null;
     }
+
+    public void updateMedicationRecord(MedicationRecord record) {
+        this.medicationRecord = record;
+    }
 }

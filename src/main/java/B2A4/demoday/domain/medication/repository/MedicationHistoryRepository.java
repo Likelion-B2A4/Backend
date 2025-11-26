@@ -25,4 +25,9 @@ public interface MedicationHistoryRepository extends JpaRepository<MedicationHis
             Long medicationRecordId,
             LocalDate date
     );
+
+    List<MedicationHistory> findAllByMedicationRecord_IdAndDateAfter(
+            Long id,
+            LocalDate targetDate
+    );
 }
