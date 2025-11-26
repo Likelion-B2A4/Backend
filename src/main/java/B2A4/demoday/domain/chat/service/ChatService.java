@@ -139,11 +139,16 @@ public class ChatService {
             throw new IllegalArgumentException("알 수 없는 사용자 타입입니다: " + userType);
         }
 
+        Long actualSenderId = userId;
+        if ("hospital".equalsIgnoreCase(userType)) {
+            actualSenderId = room.getDoctor().getId(); // 의사 ID로 바꿔치기
+        }
+
         // 4. 메시지 저장
         ChatMessage newMessage = ChatMessage.builder()
                 .chatRoom(room)
                 .senderType(userType)
-                .senderId(userId)
+                .senderId(actualSenderId)
                 .messageType("text")
                 .content(message)
                 .originalAudioUrl(null)
