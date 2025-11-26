@@ -68,6 +68,10 @@ public class ChatService {
         ChatRoom savedRoom = chatRoomRepository.save(newRoom);
         ChatRoomResponse response = ChatRoomResponse.from(savedRoom);
 
+        log.info("========== [알림 전송 시도] ==========");
+        log.info("1. DB에서 찾은 의사 ID: {}", doctor.getId());
+        log.info("2. 전송 타겟 경로: /sub/doctors/{}", doctor.getId());
+
         // 의사에게 Websocket 으로 새 채팅방 알림 전송
         messagingTemplate.convertAndSend("/sub/doctors/" + doctor.getId(), response);
 
@@ -92,6 +96,9 @@ public class ChatService {
         // AI 요약 비동기 생성 트리거
         summaryService.generateSummaryAsync(chatRoomId);
 
+        // 의사 최근 진료 반영
+        Doctor doctor = room.getDoctor();
+        doctor.setLastTreatment(LocalDateTime.now().toString());
 
         return CommonResponse.success(
                 ChatRoomResponse.from(room),
@@ -125,18 +132,23 @@ public class ChatService {
                 throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다. (환자 불일치)");
             }
         } else if ("hospital".equalsIgnoreCase(userType)) {
-            if (room.getDoctor() == null || !room.getDoctor().getId().equals(userId)) {
-                throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다. (의사 불일치)");
+            if (room.getDoctor() == null || !room.getDoctor().getHospital().getId().equals(userId)) {
+                throw new AccessDeniedException("본인 병원 소속 의사의 채팅방이 아닙니다.");
             }
         } else {
             throw new IllegalArgumentException("알 수 없는 사용자 타입입니다: " + userType);
+        }
+
+        Long actualSenderId = userId;
+        if ("hospital".equalsIgnoreCase(userType)) {
+            actualSenderId = room.getDoctor().getId(); // 의사 ID로 바꿔치기
         }
 
         // 4. 메시지 저장
         ChatMessage newMessage = ChatMessage.builder()
                 .chatRoom(room)
                 .senderType(userType)
-                .senderId(userId)
+                .senderId(actualSenderId)
                 .messageType("text")
                 .content(message)
                 .originalAudioUrl(null)
@@ -183,8 +195,8 @@ public class ChatService {
                 .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
 
         // 3. 의사 본인 확인
-        if (!room.getDoctor().getId().equals(userId)) {
-            throw new AccessDeniedException("해당 채팅방의 의사가 아닙니다.");
+        if (!room.getDoctor().getHospital().getId().equals(userId)) {
+            throw new AccessDeniedException("본인 병원 소속 의사의 채팅방이 아닙니다.");
         }
 
         // 4. STT 변환
@@ -199,7 +211,7 @@ public class ChatService {
         ChatMessage message = ChatMessage.builder()
                 .chatRoom(room)
                 .senderType("hospital")
-                .senderId(userId)
+                .senderId(room.getDoctor().getId())
                 .messageType("voice")
                 .content(convertedText)
                 .originalAudioUrl(voiceUrl)
@@ -221,9 +233,13 @@ public class ChatService {
         ChatRoom room = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new NoSuchElementException("채팅방을 찾을 수 없습니다."));
 
-        // 2. userId 와 userType 이 속한 채팅방인지 검증
-        if ("hospital".equals(userType) && !room.getDoctor().getId().equals(userId)) {
-            throw new AccessDeniedException("해당 의사가 아닙니다.");
+        // 2. userId 와 userType 이 속한 채팅방인지 검증 -> 이때 userId는 hospitalID
+        if ("hospital".equals(userType)) {
+            Long doctorHospitalId = room.getDoctor().getHospital().getId();
+
+            if (!doctorHospitalId.equals(userId)) {
+                throw new AccessDeniedException("본인 병원의 채팅방이 아닙니다.");
+            }
         }
         if ("patient".equals(userType) && !room.getPatient().getId().equals(userId)) {
             throw new AccessDeniedException("해당 환자가 아닙니다.");

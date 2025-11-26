@@ -26,30 +26,54 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        try {
+            StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        if (accessor == null) {
+            if (accessor == null) {
+                return message;
+            }
+
+            StompCommand command = accessor.getCommand();
+            String sessionId = accessor.getSessionId();
+
+            // 1. [CONNECT] 연결 시도 로그
+            if (StompCommand.CONNECT.equals(command)) {
+                String token = accessor.getFirstNativeHeader("Authorization");
+                log.info("========== [WS CONNECT 시도] ==========");
+                log.info("Session ID: {}", sessionId);
+                log.info("Token 존재 여부: {}", (token != null && !token.isBlank()));
+
+                // 여기서 에러나면 연결 거부됨
+                handleConnect(accessor);
+                log.info("[WS CONNECT 성공] 인증 완료");
+            }
+
+            // 2. [SUBSCRIBE] 구독 시도 로그
+            else if (StompCommand.SUBSCRIBE.equals(command)) {
+                String destination = accessor.getDestination();
+                log.info("========== [WS SUBSCRIBE 시도] ==========");
+                log.info("Session ID: {}", sessionId);
+                log.info("구독 경로(Destination): {}", destination);
+
+                handleSubscribe(accessor);
+                log.info("[WS SUBSCRIBE 성공] 경로: {}", destination);
+            }
+
+            // 3. [UNSUBSCRIBE] 로그
+            else if (StompCommand.UNSUBSCRIBE.equals(command)) {
+                log.info("[WS UNSUBSCRIBE] Session ID: {}", sessionId);
+                handleUnsubscribe(accessor);
+            }
+
             return message;
-        }
 
-        StompCommand command = accessor.getCommand();
+        } catch (Exception e) {
+            log.error("[WS 인터셉터 에러] 명령: {}, 원인: {}",
+                    MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class).getCommand(),
+                    e.getMessage(), e);
 
-        // STOMP CONNECT 요청 시 토큰 검증
-        if (StompCommand.CONNECT.equals(command)) {
-            handleConnect(accessor);
+            return null; // 연결/요청 차단
         }
-        
-        // SUBSCRIBE 요청 시 구독 경로 추적
-        else if (StompCommand.SUBSCRIBE.equals(command)) {
-            handleSubscribe(accessor);
-        }
-        
-        // UNSUBSCRIBE 요청 시 구독 해제 추적
-        else if (StompCommand.UNSUBSCRIBE.equals(command)) {
-            handleUnsubscribe(accessor);
-        }
-
-        return message;
     }
 
     // CONNECT 처리 (JWT 토큰 검증 + 세션 속성 설정)
@@ -96,11 +120,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         Matcher doctorMatcher = doctorPattern.matcher(destination);
         if (doctorMatcher.matches()) {
             Long doctorId = Long.parseLong(doctorMatcher.group(1));
-            
-            // 본인 확인
-            if (!userId.equals(doctorId)) {
-                log.warn("[STOMP SUBSCRIBE] 의사 본인이 아닌 구독 시도: userId={}, doctorId={}", userId, doctorId);
-                throw new IllegalArgumentException("다른 의사의 알림을 구독할 수 없습니다.");
+
+            boolean isHospital = "hospital".equals(userType); // 혹은 userType 확인
+
+            if (!isHospital) {
+                // 병원도 아니면 차단
+                log.warn("[STOMP SUBSCRIBE] 권한 없는 구독 시도");
+                throw new IllegalArgumentException("권한이 없습니다.");
             }
 
             // 세션 매니저에 연결 상태 등록

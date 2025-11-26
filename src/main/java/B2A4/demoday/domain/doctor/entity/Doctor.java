@@ -4,10 +4,7 @@ import B2A4.demoday.domain.chat.entity.ChatRoom;
 import B2A4.demoday.domain.common.BaseEntity;
 import B2A4.demoday.domain.hospital.entity.Hospital;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
+@Setter
 public class Doctor extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 public class DoctorQrResponse {
     private String qr;
+    private Long doctorId;
     private String doctorName;
     private String hospitalName;
     private String imageUrl;
@@ -19,6 +20,7 @@ public class DoctorQrResponse {
     public static DoctorQrResponse from(Doctor doctor) {
         return DoctorQrResponse.builder()
                 .qr(doctor.getQrCode())
+                .doctorId(doctor.getId())
                 .doctorName(doctor.getName())
                 .hospitalName(doctor.getHospital().getName())
                 .imageUrl(doctor.getImageUrl())
