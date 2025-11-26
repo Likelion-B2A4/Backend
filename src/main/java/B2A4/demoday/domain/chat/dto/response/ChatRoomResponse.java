@@ -1,6 +1,7 @@
 package B2A4.demoday.domain.chat.dto.response;
 
 import B2A4.demoday.domain.chat.entity.ChatRoom;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,7 +17,9 @@ public class ChatRoomResponse {
     private String doctorName;
     private String qrCode;
     private String status;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime startedAt;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime finishedAt;
 
     public static ChatRoomResponse from(ChatRoom room) {
