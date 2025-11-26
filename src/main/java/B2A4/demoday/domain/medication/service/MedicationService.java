@@ -219,8 +219,16 @@ public class MedicationService {
                                         .getOrDefault(date, new ArrayList<>());
 
                         // 해당 날짜의 모든 period 복약이 true면 taken=true
-                        boolean allTaken = !dayHistory.isEmpty() &&
-                                dayHistory.stream().allMatch(MedicationHistory::getTaken);
+                        // 총 스케줄 수
+                        int totalPeriods = record.getSchedules().size();
+
+                        // 해당 날짜에 실제 먹은(taken=true) history 개수
+                        long takenCount = dayHistory.stream()
+                                .filter(MedicationHistory::getTaken)
+                                .count();
+
+                        // 모든 스케줄 복용했을때만 true
+                        boolean allTaken = (takenCount == totalPeriods);
 
                         resultDays.add(new MedicationMonthlyResponse.DayStatus(
                                 date.toString(),
@@ -371,6 +379,16 @@ public class MedicationService {
                             .enabled(s.getEnabled())
                             .build())
                     .toList();
+
+            // 기존 record의 history 중 targetDate 이후 → newRecord로 이동
+            List<MedicationHistory> futureHistories =
+                    medicationHistoryRepository.findAllByMedicationRecord_IdAndDateAfter(
+                            record.getId(), targetDate
+                    );
+
+            for (MedicationHistory h : futureHistories) {
+                h.updateMedicationRecord(newRecord); // 엔티티에 setter 필요
+            }
 
             medicationScheduleRepository.saveAll(copiedSchedules);
 
