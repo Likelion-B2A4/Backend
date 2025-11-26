@@ -132,8 +132,8 @@ public class ChatService {
                 throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다. (환자 불일치)");
             }
         } else if ("hospital".equalsIgnoreCase(userType)) {
-            if (room.getDoctor() == null || !room.getDoctor().getId().equals(userId)) {
-                throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다. (의사 불일치)");
+            if (room.getDoctor() == null || !room.getDoctor().getHospital().getId().equals(userId)) {
+                throw new AccessDeniedException("본인 병원 소속 의사의 채팅방이 아닙니다.");
             }
         } else {
             throw new IllegalArgumentException("알 수 없는 사용자 타입입니다: " + userType);
